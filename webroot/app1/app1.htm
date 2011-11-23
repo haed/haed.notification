@@ -1,0 +1,90 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+
+<head>
+  <script src="/js/jquery.js"></script>
+  <script src="/js/jquery.atmosphere.js"></script>
+  <script src="/js/haed.notification.js"></script>
+</head>
+
+<body>
+
+<br/><input class="topic" type="text"></input><button class="subscribe" style="width: 80px">Subscribe</button>
+<br/><input class="message" type="text" style="width: 400px"></input><button class="send" style="width: 80px">Send</button>
+
+<br/>
+<button class="clear" style="width: 80px">Clear</button>
+<button class="stress1" style="width: 80px">send 1000 Messages</button>
+
+<br/>
+<div class="console"></div>
+
+
+<script type="text/javascript">
+
+/* clears output */
+jQuery(".clear").click(function() {
+    jQuery(".console").html("");
+  });
+
+var println = function(text) {
+  jQuery(".console")
+    .prepend(jQuery("<div>" + text + "</div>"));
+};
+
+
+// the channel to use
+var channel;
+
+var sendMessage = function(topic, message) {
+  return jQuery.ajax("/haed.app1/send", {
+        type: "GET", 
+        data: { topic: topic, message: message }
+      })
+    .done(function() { println("send to " + topic + ": " + message); });
+};
+
+jQuery(".stress1").click(function() {
+    var topic = jQuery(".topic").val();
+    for (var i = 0; i < 1000; i++) {
+      sendMessage(topic, "stress1, message " + i + "/1000");
+    }
+  });
+
+
+
+// initializes the channel new channel (got new channelID from server)
+haed.notification.createChannel()
+  .done(function(_channel) {
+  
+      channel = _channel;
+      
+      println("created channel: " + channel.getID());
+      
+      jQuery(".subscribe").click(function() {
+          var topic = jQuery(".topic").val();
+          jQuery.ajax("/haed.app1/subscribe", {
+                type: "GET", 
+                data: {
+                  channelID: channel.getID(), 
+                  topic: topic
+                }
+              })
+            .done(function() {
+                channel.subscribe(topic, function(message) {
+                  println("received: " + message);
+                });
+                println("subscribed to: " + topic);
+              });
+        });
+      
+      jQuery(".send").click(function() {
+          sendMessage(jQuery(".topic").val(), jQuery(".message").val())
+            .done(function() { jQuery(".message").val(""); });
+        });
+    });
+  
+</script>
+
+</body>
+</html>

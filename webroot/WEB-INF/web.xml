@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<web-app xmlns="http://java.sun.com/xml/ns/javaee"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
+                      http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd" 
+  version="3.0">
+    
+    
+    <!-- servlets -->
+    
+    <servlet>
+      <servlet-name>haed.notification</servlet-name>
+      <servlet-class>org.atmosphere.cpr.AtmosphereServlet</servlet-class>
+      
+      <init-param>
+        <param-name>javax.ws.rs.Application</param-name>
+        <param-value>haed.notification.NotificationApplication</param-value>
+      </init-param>
+      
+      <!-- Should be loaded on startup due error on parallel initialization (some synchronization is missing) -->
+      <load-on-startup>1</load-on-startup>
+    </servlet>
+    
+    
+    <servlet>
+      <servlet-name>haed.app1</servlet-name>
+      <servlet-class>com.sun.jersey.spi.container.servlet.ServletContainer</servlet-class>
+      <init-param>
+        <param-name>javax.ws.rs.Application</param-name>
+        <param-value>haed.app1.App1Application</param-value>
+      </init-param>
+    </servlet>
+    
+    
+    <!-- mappings -->
+    
+    <servlet-mapping>
+      <servlet-name>default</servlet-name>
+      <url-pattern>/</url-pattern>
+    </servlet-mapping>
+    
+    <servlet-mapping>
+      <servlet-name>haed.notification</servlet-name>
+      <url-pattern>/notification/v1/*</url-pattern>
+    </servlet-mapping>
+    
+    <servlet-mapping>
+      <servlet-name>haed.app1</servlet-name>
+      <url-pattern>/haed.app1/*</url-pattern>
+    </servlet-mapping>
+    
+</web-app>
