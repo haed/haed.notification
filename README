@@ -1,4 +1,5 @@
-Idea of the notification framework: You can subscribe to one channel (per server), which can listen to many topics, here is some pseudo code:
+
+#Idea of the notification framework: You can subscribe to one channel (per server), which can listen to many topics, here is some pseudo code:
 
 haed.notification.createChannel().done(function(channel) {
   channel.subscribe("topic1", function(message) { // topic1 notification });
