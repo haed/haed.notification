@@ -14,7 +14,8 @@
 
 <br/>
 <button class="clear" style="width: 80px">Clear</button>
-<button class="stress1" style="width: 80px">send 1000 Messages</button>
+<button class="stress10" style="width: 80px">send 10 Messages</button>
+<button class="stress100" style="width: 80px">send 100 Messages</button>
 
 <br/>
 <div class="console"></div>
@@ -44,12 +45,15 @@ var sendMessage = function(topic, message) {
     .done(function() { println("send to " + topic + ": " + message); });
 };
 
-jQuery(".stress1").click(function() {
-    var topic = jQuery(".topic").val();
-    for (var i = 0; i < 1000; i++) {
-      sendMessage(topic, "stress1, message " + i + "/1000");
-    }
-  });
+var sendMessages = function(max) {
+  var topic = jQuery(".topic").val();
+  for (var i = 1; i <= max; i++) {
+    sendMessage(topic, "stress1, message " + i + "/" + max);
+  }
+};
+
+jQuery(".stress10").click(function() { sendMessages(10); });
+jQuery(".stress100").click(function() { sendMessages(100); });
 
 
 

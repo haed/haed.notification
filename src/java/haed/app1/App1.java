@@ -26,8 +26,9 @@ public class App1 {
 	@Path("/send")
 	@Produces(MediaType.TEXT_PLAIN + ";charset=utf-8")
 	public Response send(
-			final @QueryParam("topic") String topic, 
-			final @QueryParam("message") String message) {
+				final @QueryParam("topic") String topic, 
+				final @QueryParam("message") String message)
+			throws Exception {
 		NotificationMgr.getInstance().sendNotification(topic, message);
 		return Response.ok().build();
 	}

@@ -18,8 +18,33 @@
         <param-value>haed.notification.NotificationApplication</param-value>
       </init-param>
       
+      
+      <!--
+      <init-param>
+        <param-name>org.atmosphere.cpr.broadcasterClass</param-name>
+        <param-value>haed.notification.PatchedBroadcaster</param-value>
+      </init-param>-->
+      
+      
+      
+      <init-param>
+        <param-name>org.atmosphere.cpr.broadcasterCacheClass</param-name>
+        <param-value>org.atmosphere.cache.HeaderBroadcasterCache</param-value>
+      </init-param>
+      
+      <!--
+      <init-param>
+        <param-name>org.atmosphere.cpr.broadcasterCacheClass</param-name>
+        <param-value>haed.notification.NotificationBroadcasterCache</param-value>
+      </init-param>-->
+      
+      <!--<init-param>
+        <param-name>org.atmosphere.cpr.ApplicationConfig.broadcasterCacheClass</param-name>
+        <param-value>org.atmosphere.cache.SessionBroadcasterCache</param-value>
+      </init-param>-->
+      
       <!-- Should be loaded on startup due error on parallel initialization (some synchronization is missing) -->
-      <load-on-startup>1</load-on-startup>
+      <!--<load-on-startup>1</load-on-startup>-->
     </servlet>
     
     
