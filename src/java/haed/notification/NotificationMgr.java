@@ -18,6 +18,7 @@ import org.apache.log4j.Logger;
 import org.atmosphere.cpr.Broadcaster;
 import org.atmosphere.cpr.BroadcasterFactory;
 import org.atmosphere.cpr.BroadcasterLifeCyclePolicy;
+import org.atmosphere.jersey.JerseyBroadcaster;
 
 import com.google.gson.Gson;
 
@@ -172,54 +173,45 @@ public class NotificationMgr {
 		if (logger.isDebugEnabled())
 			logger.debug("send " + queue.size() + " queued notifications to channel '" + channelID + "'");
 		
-		final StringBuilder data = new StringBuilder();
 		synchronized (queue) {
 			
 			// build up data
+			final StringBuilder data = new StringBuilder();
 			for (final Long notificationID: queue)
 				// TODO [haed]: maybe notification is not cached anymore (e.g. due timeout), we need a failure scenario (e.g. a special notification)
 				data.append(notificationCache.get(notificationID));
 			
-			// finally clear queue
-			queue.clear();
+			// send
+			if (data != null && data.length() > 0) {
+				
+				try {
+					
+					sendData(broadcaster, data.toString());
+					
+					// send was successful, clear queue
+					queue.clear();
+					
+				} catch (final Exception e) {
+					logger.fatal("error on sending queue data", e);
+				}
+			}
 		}
-		
-		// send
-		sendData(broadcaster, data.toString());
 	}
 	
-	public PatchedBroadcaster getBroadcaster(final String channelID, boolean createIfNull) {
+	public Broadcaster getBroadcaster(final String channelID, boolean createIfNull) {
 		
-		PatchedBroadcaster broadcaster = (PatchedBroadcaster) BroadcasterFactory.getDefault().lookup(PatchedBroadcaster.class, channelID, false);
+		Broadcaster broadcaster = BroadcasterFactory.getDefault().lookup(JerseyBroadcaster.class, channelID, false);
 		if (broadcaster == null && createIfNull) {
 			
 			// create and initialize broadcaster
-			broadcaster = (PatchedBroadcaster) BroadcasterFactory.getDefault().lookup(PatchedBroadcaster.class, channelID, true);
+			broadcaster = BroadcasterFactory.getDefault().lookup(JerseyBroadcaster.class, channelID, true);
+			
+			// TODO @haed [haed]: maybe we do not need a manual lifecycle handling if we unify header cache and queue (if broadcaster is absent) 
 			broadcaster.setBroadcasterLifeCyclePolicy(broadcasterLifeCyclePolicy);
 			
 			// TODO [haed]: this should be done by atmosphere with the NotificationAPI#suspend() -> schedule destroy approach
 			// send all pending, queued notifications (if exists)
 			processQueue(channelID, broadcaster);
-			
-			
-			// TODO [haed]: use onDestroy() to mark channel as absent (start a timeout to destroy channel after a threshold -> maybe client re-connects)
-			// 		-> not needed anymore? use NotificationAPI#suspend() for scheduled channel destroy
-//			broadcaster.addBroadcasterLifeCyclePolicyListener(new BroadcasterLifeCyclePolicyListener() {
-//				
-//				
-//				
-//				public void onIdle() {
-//					logger.debug("idle");
-//				}
-//				
-//				public void onEmpty() {
-//					logger.debug("empty");
-//				}
-//				
-//				public void onDestroy() {
-//					logger.debug("destroy");
-//				}
-//			});
 		}
 		
 		return broadcaster;
@@ -325,7 +317,8 @@ public class NotificationMgr {
 			.append(jsonNotification.length()).append(":").append(jsonNotification).toString();
 	}
 	
-	public void sendNotification(final String notificationType, final Object source) {
+	public void sendNotification(final String notificationType, final Object source)
+			throws Exception {
 		
 		// atmosphere is not reliable (or buggy), notifications can be lost while client re-connects (e.g. long polling)
 		// 	=> approach: we use a queue for each absent channel
@@ -340,7 +333,7 @@ public class NotificationMgr {
 		
 		synchronized (channelIDs) {
 			
-			for (Map.Entry<String, NotificationFilter> entry: channelIDs.entrySet()) {
+			for (final Map.Entry<String, NotificationFilter> entry: channelIDs.entrySet()) {
 				
 				// check for filter
 				final NotificationFilter filter = entry.getValue();
@@ -349,25 +342,25 @@ public class NotificationMgr {
 				
 				final String channelID = entry.getKey();
 				
-				// check if a broadcaster exists
-				final PatchedBroadcaster broadcaster = getBroadcaster(channelID, false);
-				if (broadcaster == null || broadcaster.isConnected() == false) {
-					
-					// TODO [haed]: broadcaster == null: with our new approach this should never happen (destroy broad caster on session timeout)
-					
-					// TODO [haed]: add a check for valid channel (maybe channel does not exists anymore)
-					
-					// broadcaster is absent, queue notification
-					queueNotification(channelID, currentNotificationID, notificationCtnr);
-					
-				} else {
+				// TODO @haed [haed]: broadcaster can be null if all resources are absent, we have to queue then (unify header cache and queue)
+				final Broadcaster broadcaster = getBroadcaster(channelID, false);
+//				if (broadcaster == null || broadcaster.isConnected() == false) {
+//					
+//					// TODO [haed]: broadcaster == null: with our new approach this should never happen (destroy broad caster on session timeout)
+//					
+//					// TODO [haed]: add a check for valid channel (maybe channel does not exists anymore)
+//					
+//					// broadcaster is absent, queue notification
+//					queueNotification(channelID, currentNotificationID, notificationCtnr);
+//					
+//				} else {
 					
 					if (logger.isDebugEnabled())
 						logger.debug("send notification, channelID: " + channelID + ", notificationID: " + currentNotificationID + ", notificationCtnr: " + notificationCtnr);
 					
 					// send directly
 					sendData(broadcaster, notificationCtnr);
-				}
+//				}
 			}
 		}
 	}
@@ -378,6 +371,7 @@ public class NotificationMgr {
 		//   - if more than 1 message is triggered to broadcast within one async-write cycle the internal state gets broken (JerseyBroadcasterUtil#40)
 		//   - all messages would be send in parallel, but on long-polling the response will be resumed (calling listeners is not synchronized)
 		//   => avoid with a delayed broadcast
+//		System.out.println("=> " + broadcaster.broadcast(data).get());
 		broadcaster.broadcast(data);
 		
 		// TODO [haed]: (atmosphere 0.7.2) on sending delayed broadcast queued messages are send within one response, but first message will be last, 

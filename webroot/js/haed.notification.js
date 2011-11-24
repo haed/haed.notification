@@ -126,11 +126,14 @@ haed.notification = (function() {
       var createCallback = function(baseURL, channelID) {
         
         var lastResponseBody = "";
+        
         var stream = "";
         
         return function(response) {
           
-          // HOTFIX (for 0.7.2, maybe fixed in 0.8): atmosphere do not cut chunks out of the response body on polling (but in streaming it does)
+//          console.log("response.responseBody: " + response.responseBody);
+          
+          // HOTFIX (for 0.7.2, still in 0.8): atmosphere do not cut chunks out of the response body on polling (but in streaming it does)
           //  => so we have to do it manually
           if (response.responseBody.indexOf(lastResponseBody) === 0) {
             response.responseBody = response.responseBody.substring(lastResponseBody.length);
@@ -139,8 +142,8 @@ haed.notification = (function() {
             lastResponseBody = response.responseBody;
           }
           
-          // TODO @haed: remove (only debug)
-          console.log("responseBody: " + response.responseBody);
+//          // TODO @haed: remove (only debug)
+//          console.log("responseBody: " + response.responseBody);
           
           if (response.state === "messageReceived" && response.responseBody && response.responseBody.length > 0) {
             
@@ -193,9 +196,11 @@ haed.notification = (function() {
           channels[_baseURL][channelID].baseURL = _baseURL;
           
           channels[_baseURL][channelID].open = true;
-          jQuery.atmosphere.subscribe(_baseURL + "notification/v1/openChannel?channelID=" + channelID + "&outputComments=true", createCallback(_baseURL, channelID), {
+          jQuery.atmosphere.subscribe(_baseURL + "notification/v1/openChannel?channelID=" + channelID + "&outputComments=true", null, {
               
-              transport: 'long-polling', 
+              callback: createCallback(_baseURL, channelID), 
+            
+//              transport: 'long-polling', 
 //              fallbackTransport: 'long-polling', 
               
               // TODO [haed]: check: ie does not support streaming, also fallback will be ignored ...

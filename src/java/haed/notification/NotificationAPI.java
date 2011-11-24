@@ -61,7 +61,7 @@ public class NotificationAPI {
 		final Gson gson = new Gson();
 		final String channelID = gson.fromJson(channelIDParameter, String.class);
 		
-		final PatchedBroadcaster broadCaster = notificationMgr.getBroadcaster(channelID, true);
+		final Broadcaster broadCaster = notificationMgr.getBroadcaster(channelID, true);
 		
 		final SuspendResponseBuilder<String> suspendResponseBuilder = new SuspendResponse.SuspendResponseBuilder<String>()
 			.period(1, TimeUnit.MINUTES)
@@ -73,25 +73,17 @@ public class NotificationAPI {
 						logger.debug("channel with id '" + channelID + "' suspended");
 					
 					
-					// touch channel session
+					// touch channel session to (keep alive)
 					HttpSessionMgr.getInstance().getSession(channelID, false);
 					
-					
-					// mark broadcaster as connected
-					broadCaster.setConnected(true);
-					
-					
-					// process queued notifications
-					notificationMgr.processQueue(channelID, broadCaster);
+//					// process queued notifications: re-check if broadcaster was absent (because of all resources were disconnected)
+//					notificationMgr.processQueue(channelID, broadCaster);
 				}
 				
 				public void onResume(final AtmosphereResourceEvent<HttpServletRequest, HttpServletResponse> event) {
 					
 					if (logger.isDebugEnabled())
 						logger.debug("channel with id '" + channelID + "' resumed");
-					
-					// mark broadcaster as not connected
-					broadCaster.setConnected(false);
 				}
 				
 				public void onDisconnect(final AtmosphereResourceEvent<HttpServletRequest, HttpServletResponse> event) {
