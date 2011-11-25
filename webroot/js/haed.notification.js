@@ -53,31 +53,11 @@ haed.notification = (function() {
       var _baseURL = validateBaseURL(baseURL);
       jQuery.get(_baseURL + "notification/v1/createChannel")
         .done(function(channelID) {
-          deferred.resolve(haed.notification.getChannel({ baseURL: _baseURL, channelID: channelID }));
-        })
+            deferred.resolve(haed.notification.getChannel({ baseURL: _baseURL, channelID: channelID }));
+          })
         .fail(deferred.reject);
       
       return deferred.promise();
-    }, 
-    
-    getDefaultChannelID: function(baseURL) {
-      
-      var _baseURL = validateBaseURL(baseURL);
-      
-      channels[_baseURL] = channels[_baseURL] || {};
-      
-      if (channels[_baseURL]["default"] === undefined) {
-        channels[_baseURL]["default"] = { deferred: new jQuery.Deferred() };
-        haed.notification.createChannel(_baseURL)
-          .done(function(channelID) {
-            channels[_baseURL][channelID] = channels[_baseURL]["default"];
-            channels[_baseURL][channelID].id = channelID;
-            haed.notification.openChannel(_baseURL, channelID);
-          })
-          .then(channels[_baseURL]["default"].deferred.resolve, channels[_baseURL]["default"].deferred.reject);
-      }
-      
-      return channels[_baseURL]["default"].deferred.promise();
     }, 
     
     /**
@@ -207,6 +187,29 @@ haed.notification = (function() {
       };
     }(), 
     
+    getDefaultChannel: function(baseURL) {
+      
+      var _baseURL = validateBaseURL(baseURL);
+      
+      channels[_baseURL] = channels[_baseURL] || {};
+      
+      if (channels[_baseURL]["default"] === undefined) {
+        channels[_baseURL]["default"] = { deferred: new jQuery.Deferred() };
+        haed.notification.createChannel(_baseURL)
+          .done(function(channel) {
+              
+              channels[_baseURL][channel.getID()] = channels[_baseURL]["default"];
+              channels[_baseURL][channel.getID()].channel = channel;
+              
+              haed.notification.openChannel(_baseURL, channel.getID());
+              
+              channels[_baseURL]["default"].deferred.resolve(channel);
+            })
+          .fail(channels[_baseURL]["default"].deferred.reject);
+      }
+      
+      return channels[_baseURL]["default"].deferred.promise();
+    }, 
     
     openChannel: function() {
       
@@ -301,34 +304,6 @@ haed.notification = (function() {
         return channels[_baseURL][channelID];
       };
     }(), 
-    
-//    ping: function(baseURL, channelID) {
-//      
-//      var deferredID = (++pingDeferredCounter);
-//      pingDeferreds[deferredID] = new jQuery.Deferred()
-//        .always(function() {
-//          delete pingDeferreds[deferredID];
-//        });
-//      
-//      jQuery.ajax(validateBaseURL(baseURL) + "notification/v1/ping", {
-//          data: {
-//            channelID: JSON.stringify(channelID), 
-//            message: JSON.stringify({ deferredID: deferredID })
-//          }, 
-//          type: "POST"
-//        })
-//        .error(pingDeferreds[deferredID].reject);
-//      
-//      setTimeout(function(deferred) {
-//        return function() {
-//          if (!deferred.isRejected() && !deferred.isResolved()) {
-//            deferred.reject();
-//          }
-//        };
-//      }(pingDeferreds[deferredID]), 30000);
-//      
-//      return pingDeferreds[deferredID].promise();
-//    }, 
 
     // TODO [scthi]: there should be a more convenient configure method
     setDefaultBaseURL: function(url) {

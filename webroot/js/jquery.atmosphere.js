@@ -32,7 +32,7 @@ jQuery.atmosphere = function() {
     });
 
     return {
-        version : 0.9,
+        version : 0.8,
         response : {
             status: 200,
             responseBody : '',
@@ -89,7 +89,6 @@ jQuery.atmosphere = function() {
             logLevel = jQuery.atmosphere.request.logLevel;
             if (callback != null) {
                 jQuery.atmosphere.addCallback(callback);
-                jQuery.atmosphere.request.callback = callback;
             }
 
             if (jQuery.atmosphere.request.transport != jQuery.atmosphere.activeTransport) {

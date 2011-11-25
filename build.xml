@@ -7,7 +7,7 @@
 	<property name="srcdir" value="src/java" />
 	<property name="reldir" value="release" />
 	
-	<property name="version.num" value="0.1.2011-11-23" />
+	<property name="version.num" value="0.1.2011-11-25" />
 
 	<path id="libraries">
 		<fileset dir="${libdir}">
@@ -45,7 +45,6 @@
     <jar basedir="${bindir}" jarfile="${reldir}/haed.notification_${version.num}.jar" compress="true">
       <include name="haed/notification/**/*" />
     	<include name="haed/session/**/*" />
-    	<include name="haed/WebServer.class" />
   	</jar>
   </target>
   
@@ -54,31 +53,6 @@
   </target>
 	
 	<target name="release" depends="clean,build" description="builds a release">
-		
-		<copy todir="${reldir}">
-      <fileset file="license.txt" />
-    </copy>
-		
-		<copy todir="${reldir}">
-      <fileset dir="src/js" />
-    </copy>
-		
-		<mkdir dir="${reldir}/lib" />
-		<mkdir dir="${reldir}/lib/java" />
-		<copy todir="${reldir}/lib/java">
-      <fileset dir="${libdir}" />
-    </copy>
-		
-		<mkdir dir="${reldir}/lib.spec" />
-    <mkdir dir="${reldir}/lib.spec/java" />
-    <copy todir="${reldir}/lib.spec/java">
-      <fileset dir="lib.spec/java" />
-    </copy>
-		
-		<mkdir dir="${reldir}/lib/js" />
-		<copy todir="${reldir}/lib/js">
-		  <fileset dir="lib/js" />
-		</copy>
 		
 		<zip destfile="haed.notification_${version.num}.zip">
     	<fileset dir="${reldir}" />

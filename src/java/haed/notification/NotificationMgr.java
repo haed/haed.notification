@@ -296,8 +296,7 @@ public class NotificationMgr {
 			.append(jsonNotification.length()).append(":").append(jsonNotification).toString();
 	}
 	
-	public void sendNotification(final String notificationType, final Object source)
-			throws Exception {
+	public void sendNotification(final String notificationType, final Object source) {
 		
 		final Map<String, NotificationFilter> channelIDs = subscriptions.get(notificationType);
 		if (channelIDs == null || channelIDs.isEmpty())
