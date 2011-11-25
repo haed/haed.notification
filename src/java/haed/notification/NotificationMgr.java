@@ -1,5 +1,6 @@
 package haed.notification;
 
+import haed.notification.atmosphere.NotificationBroadcaster;
 import haed.notification.gson.JSONStreamingOutput;
 import haed.session.HttpSession;
 import haed.session.HttpSessionEvent;
@@ -13,12 +14,12 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.log4j.Logger;
 import org.atmosphere.cpr.Broadcaster;
 import org.atmosphere.cpr.BroadcasterFactory;
-import org.atmosphere.cpr.BroadcasterLifeCyclePolicy;
-import org.atmosphere.jersey.JerseyBroadcaster;
 
 import com.google.gson.Gson;
 
@@ -29,13 +30,6 @@ public class NotificationMgr {
 	
 	private static final Logger logger = Logger.getLogger(NotificationMgr.class);
 	
-	/**
-	 * We destroy broadcasters manually.
-	 */
-	private static final BroadcasterLifeCyclePolicy broadcasterLifeCyclePolicy = 
-			new BroadcasterLifeCyclePolicy.Builder()
-	  		.policy(BroadcasterLifeCyclePolicy.ATMOSPHERE_RESOURCE_POLICY.NEVER)
-	  		.build();
 	
 	private static final String KEY_SUBSCRIPTIONS = "haed.soa.notification.subscriptions";
 	
@@ -55,7 +49,7 @@ public class NotificationMgr {
 	 */
 	private final Map<String, LinkedList<Long>> queues = new HashMap<String, LinkedList<Long>>();
 	
-	private long notificationId = 1;
+	private final AtomicInteger notificationID = new AtomicInteger(1);
 	
 	private final long time2NotificationIdThreshold = 1000;
 	private long currentTime2NotificationId = 0;
@@ -85,11 +79,9 @@ public class NotificationMgr {
 			});
 	}
 	
-	private long createNotificationId() {
-		long id;
-		synchronized (this) {
-			id = notificationId++;
-		}
+	private long createNotificationID() {
+		
+		final long id = notificationID.incrementAndGet();
 		
 		final long now = System.currentTimeMillis();
 		if (now - currentTime2NotificationId > time2NotificationIdThreshold) {
@@ -162,7 +154,7 @@ public class NotificationMgr {
 		}
 	}
 	
-	public void processQueue(final String channelID, final Broadcaster broadcaster) {
+	public void processQueue(final String channelID, final NotificationBroadcaster broadcaster) {
 		
 		final LinkedList<Long> queue = queues.get(channelID);
 		if (queue == null || queue.isEmpty()) {
@@ -198,26 +190,13 @@ public class NotificationMgr {
 		}
 	}
 	
-	public Broadcaster getBroadcaster(final String channelID, boolean createIfNull) {
-		
-		Broadcaster broadcaster = BroadcasterFactory.getDefault().lookup(JerseyBroadcaster.class, channelID, false);
-		if (broadcaster == null && createIfNull) {
-			
-			// create and initialize broadcaster
-			broadcaster = BroadcasterFactory.getDefault().lookup(JerseyBroadcaster.class, channelID, true);
-			
-			// TODO @haed [haed]: maybe we do not need a manual lifecycle handling if we unify header cache and queue (if broadcaster is absent) 
-			broadcaster.setBroadcasterLifeCyclePolicy(broadcasterLifeCyclePolicy);
-			
-			// TODO [haed]: this should be done by atmosphere with the NotificationAPI#suspend() -> schedule destroy approach
-			// send all pending, queued notifications (if exists)
-			processQueue(channelID, broadcaster);
-		}
-		
-		return broadcaster;
+	
+	
+	public NotificationBroadcaster getBroadcaster(final String channelID, final boolean createIfNull) {
+		return (NotificationBroadcaster) BroadcasterFactory.getDefault().lookup(NotificationBroadcaster.class, channelID, createIfNull);
 	}
 	
-	public String createChannelId() {
+	public String createChannelID() {
 		return HttpSessionUtil.generateSessionId();
 	}
 	
@@ -305,7 +284,7 @@ public class NotificationMgr {
 		
 		final Map<String, String> notification = new HashMap<String, String>();
 		if (id == null)
-			notification.put("id", String.valueOf(createNotificationId()));
+			notification.put("id", String.valueOf(createNotificationID()));
 		else
 			notification.put("id", String.valueOf(id));
 		
@@ -320,15 +299,12 @@ public class NotificationMgr {
 	public void sendNotification(final String notificationType, final Object source)
 			throws Exception {
 		
-		// atmosphere is not reliable (or buggy), notifications can be lost while client re-connects (e.g. long polling)
-		// 	=> approach: we use a queue for each absent channel
-		
 		final Map<String, NotificationFilter> channelIDs = subscriptions.get(notificationType);
 		if (channelIDs == null || channelIDs.isEmpty())
 			return;
 		
 		// build up notification
-		final long currentNotificationID = createNotificationId();
+		final long currentNotificationID = createNotificationID();
 		final String notificationCtnr = buildNotificationCtnr(currentNotificationID, notificationType, source);
 		
 		synchronized (channelIDs) {
@@ -342,37 +318,44 @@ public class NotificationMgr {
 				
 				final String channelID = entry.getKey();
 				
-				// TODO @haed [haed]: broadcaster can be null if all resources are absent, we have to queue then (unify header cache and queue)
-				final Broadcaster broadcaster = getBroadcaster(channelID, false);
-//				if (broadcaster == null || broadcaster.isConnected() == false) {
-//					
-//					// TODO [haed]: broadcaster == null: with our new approach this should never happen (destroy broad caster on session timeout)
-//					
-//					// TODO [haed]: add a check for valid channel (maybe channel does not exists anymore)
-//					
-//					// broadcaster is absent, queue notification
-//					queueNotification(channelID, currentNotificationID, notificationCtnr);
-//					
-//				} else {
+				final NotificationBroadcaster broadcaster = getBroadcaster(channelID, false);
+				if (broadcaster != null && broadcaster.isAvailable()) {
 					
 					if (logger.isDebugEnabled())
 						logger.debug("send notification, channelID: " + channelID + ", notificationID: " + currentNotificationID + ", notificationCtnr: " + notificationCtnr);
 					
 					// send directly
 					sendData(broadcaster, notificationCtnr);
-//				}
+					
+				} else {
+					
+					// TODO @haed [haed]: add a check for valid channel (maybe channel does not exists anymore)
+					
+					// broadcaster is absent, queue notification
+					queueNotification(channelID, currentNotificationID, notificationCtnr);
+				}
 			}
 		}
 	}
 	
-	public void sendData(final Broadcaster broadcaster, final String data) {
+	protected void sendData(final NotificationBroadcaster broadcaster, final String data) {
 		
-		// TODO [haed]: (atmosphere 0.7.2) Atmosphere bugfix for long-polling, jersey, jetty-scenario
+		// TODO [haed]: (atmosphere 0.7.2, still in 0.8) Atmosphere bugfix for long-polling, jersey, jetty-scenario
 		//   - if more than 1 message is triggered to broadcast within one async-write cycle the internal state gets broken (JerseyBroadcasterUtil#40)
 		//   - all messages would be send in parallel, but on long-polling the response will be resumed (calling listeners is not synchronized)
-		//   => avoid with a delayed broadcast
-//		System.out.println("=> " + broadcaster.broadcast(data).get());
-		broadcaster.broadcast(data);
+		try {
+			synchronized (broadcaster) {
+				broadcaster.broadcast(data).get(30, TimeUnit.SECONDS);
+			}
+		} catch (final Exception e) {
+			logger.fatal("error on sending message, messages will be lost: " + data, e);
+		}
+		
+		// this should be the 'normal' way, on illegal state the message go to the attached cache (if exists)
+		// -> but we cache outside of atmosphere (with some optimization), so we need to synchronized/blocking-approach
+//		broadcaster.broadcast(data);
+		
+		
 		
 		// TODO [haed]: (atmosphere 0.7.2) on sending delayed broadcast queued messages are send within one response, but first message will be last, 
 		//		all others will be send in correct order (simply send some messages within a short period of time) 

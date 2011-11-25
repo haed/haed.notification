@@ -16,8 +16,6 @@ haed.notification = (function() {
   
   var defaultBaseURL = "/";
   
-  var pingDeferredCounter = 0;
-  var pingDeferreds = {};
   
   var notify = function(baseURL, channelID, notification) {
     
@@ -25,25 +23,16 @@ haed.notification = (function() {
       
       var subscriptions = channels[baseURL][channelID].subscriptions;
       
-      if (notification.type.indexOf("haed.notification.ping.") === 0) {
-        try {
-          var deferredID = JSON.parse(notification.message).deferredID;
-          if (pingDeferreds[deferredID]) {
-            pingDeferreds[deferredID].resolve();
-          }
-        } catch (error) { /* maybe this is a simple text message */ }
-      }
-      
       if (subscriptions[notification.type]) {
+        
+        var message = notification.message;
+        try {
+          // try to parse
+          message = JSON.parse(notification.message);
+        } catch (error) { /* maybe this is a simple text message */ }
+        
         for (var i = 0; i < subscriptions[notification.type].length; i++) {
           if (subscriptions[notification.type][i]) {
-
-            var message = notification.message;
-            try {
-              // try to parse
-              message = JSON.parse(notification.message);
-            } catch (error) { /* maybe this is a simple text message */ }
-
             subscriptions[notification.type][i].call(this, message, notification.type);
           }
         }
@@ -100,8 +89,22 @@ haed.notification = (function() {
       
       return function(parameters) {
         
-        var baseURL = parameters ? parameters.baseURL : null;
-        haed.notification.openChannel(baseURL, parameters.channelID);
+        var baseURL = parameters ? validateBaseURL(parameters.baseURL) : validateBaseURL(null);
+        var channelID = parameters.channelID;
+        
+        // open channel
+        haed.notification.openChannel(baseURL, channelID);
+        
+        var pingDeferred = null;
+        var keepPinging = null;
+        
+        // subscribe to ping
+        haed.notification.subscribe(baseURL, channelID, "haed.notification.ping." + channelID, function() {
+            if (pingDeferred) {
+              pingDeferred.resolve();
+            };
+          });
+        
         
         return {
           
@@ -113,8 +116,92 @@ haed.notification = (function() {
             return parameters.channelID;
           }, 
           
+          keepPinging: function() {
+            
+            if (keepPinging == null) {
+              
+              keepPinging = new function() {
+                
+                var doneCallbacks = new jQuery.Callbacks();
+                var failCallbacks = new jQuery.Callbacks();
+                
+                return {
+                  
+                  fireOnSuccess: function() {
+                    doneCallbacks.fire();
+                  }, 
+                  
+                  fireOnError: function(error) {
+                    failCallbacks.fire(error);
+                  },
+                  
+                  done: function(func) {
+                    doneCallbacks.add(func);
+                    return this;
+                  }, 
+                  
+                  fail: function(func) {
+                    failCallbacks.add(func);
+                    return this;
+                  }
+                };
+              }();
+              
+              var next = function() {
+                  setTimeout(function(baseURL, channelID, keepPinging) {
+                    return function() {
+                        haed.notification.getChannel({ baseURL: baseURL, channelID: channelID }).ping()
+                          .always(next)
+                          .done(function() {
+                              keepPinging.fireOnSuccess();
+                            })
+                          .fail(function(error) {
+                              keepPinging.fireOnError(error);
+                            });
+                      };
+                    }(baseURL, channelID, keepPinging), 60000); // trigger next ping in one minute
+                };
+              
+              next();
+            }
+            
+            return keepPinging;
+          }, 
+          
+          ping: function() {
+            
+            if (pingDeferred) {
+              return pingDeferred.promise();
+            }
+            
+            pingDeferred = new jQuery.Deferred();
+            pingDeferred.always(function() {
+                pingDeferred = null;
+              });
+            
+            jQuery.ajax(baseURL + "notification/v1/ping", {
+                  data: { channelID: channelID }, 
+                  type: "GET"
+                })
+              .fail(function() {
+                  if (pingDeferred) {
+                    pingDeferred.reject("noConnection");
+                  }
+                });
+            
+            setTimeout(function(pingDeferred) {
+              return function() {
+                if (pingDeferred) {
+                  pingDeferred.reject("noPing");
+                }
+              };
+            }(pingDeferred), 120000); // 2 minutes
+            
+            return pingDeferred.promise();
+          }, 
+          
           subscribe: function(notificationType, callback) {
-            haed.notification.subscribe(baseURL, parameters.channelID, notificationType, callback);
+            haed.notification.subscribe(baseURL, channelID, notificationType, callback);
           }
         } 
       };
@@ -131,8 +218,6 @@ haed.notification = (function() {
         
         return function(response) {
           
-//          console.log("response.responseBody: " + response.responseBody);
-          
           // HOTFIX (for 0.7.2, still in 0.8): atmosphere do not cut chunks out of the response body on polling (but in streaming it does)
           //  => so we have to do it manually
           if (response.responseBody.indexOf(lastResponseBody) === 0) {
@@ -142,15 +227,10 @@ haed.notification = (function() {
             lastResponseBody = response.responseBody;
           }
           
-//          // TODO @haed: remove (only debug)
-//          console.log("responseBody: " + response.responseBody);
           
           if (response.state === "messageReceived" && response.responseBody && response.responseBody.length > 0) {
             
             stream += response.responseBody;
-            
-            // TODO @haed: remove (only debug)
-            console.log("stream: " + stream);
 
             var idx = stream.indexOf(":");
             while (idx > -1) {
@@ -222,33 +302,33 @@ haed.notification = (function() {
       };
     }(), 
     
-    ping: function(baseURL, channelID) {
-      
-      var deferredID = (++pingDeferredCounter);
-      pingDeferreds[deferredID] = new jQuery.Deferred()
-        .always(function() {
-          delete pingDeferreds[deferredID];
-        });
-      
-      jQuery.ajax(validateBaseURL(baseURL) + "notification/v1/ping", {
-          data: {
-            channelID: JSON.stringify(channelID), 
-            message: JSON.stringify({ deferredID: deferredID })
-          }, 
-          type: "POST"
-        })
-        .error(pingDeferreds[deferredID].reject);
-      
-      setTimeout(function(deferred) {
-        return function() {
-          if (!deferred.isRejected() && !deferred.isResolved()) {
-            deferred.reject();
-          }
-        };
-      }(pingDeferreds[deferredID]), 30000);
-      
-      return pingDeferreds[deferredID].promise();
-    },
+//    ping: function(baseURL, channelID) {
+//      
+//      var deferredID = (++pingDeferredCounter);
+//      pingDeferreds[deferredID] = new jQuery.Deferred()
+//        .always(function() {
+//          delete pingDeferreds[deferredID];
+//        });
+//      
+//      jQuery.ajax(validateBaseURL(baseURL) + "notification/v1/ping", {
+//          data: {
+//            channelID: JSON.stringify(channelID), 
+//            message: JSON.stringify({ deferredID: deferredID })
+//          }, 
+//          type: "POST"
+//        })
+//        .error(pingDeferreds[deferredID].reject);
+//      
+//      setTimeout(function(deferred) {
+//        return function() {
+//          if (!deferred.isRejected() && !deferred.isResolved()) {
+//            deferred.reject();
+//          }
+//        };
+//      }(pingDeferreds[deferredID]), 30000);
+//      
+//      return pingDeferreds[deferredID].promise();
+//    }, 
 
     // TODO [scthi]: there should be a more convenient configure method
     setDefaultBaseURL: function(url) {

@@ -16,6 +16,7 @@
 <button class="clear" style="width: 80px">Clear</button>
 <button class="stress10" style="width: 80px">send 10 Messages</button>
 <button class="stress100" style="width: 80px">send 100 Messages</button>
+<button class="ping" style="width: 80px">ping</button>
 
 <br/>
 <div class="console"></div>
@@ -54,6 +55,16 @@ var sendMessages = function(max) {
 
 jQuery(".stress10").click(function() { sendMessages(10); });
 jQuery(".stress100").click(function() { sendMessages(100); });
+
+jQuery(".ping").click(function() {
+    channel.ping()
+      .done(function() {
+          alert("ping was successful")
+        })
+      .fail(function(error) {
+          alert("ping failed: " + error)
+        });
+  });
 
 
 
