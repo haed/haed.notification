@@ -127,22 +127,24 @@ haed.notification = (function() {
                 };
               }();
               
-              var next = function() {
+              var next = function(timeout) {
+                  timeout = timeout || 60000; // initialize timeout to one minute
                   setTimeout(function(baseURL, channelID, keepPinging) {
                     return function() {
                         haed.notification.getChannel({ baseURL: baseURL, channelID: channelID }).ping()
-                          .always(next)
                           .done(function() {
+                              next();
                               keepPinging.fireOnSuccess();
                             })
                           .fail(function(error) {
+                              next(10000); // ten seconds
                               keepPinging.fireOnError(error);
                             });
                       };
-                    }(baseURL, channelID, keepPinging), 60000); // trigger next ping in one minute
+                    }(baseURL, channelID, keepPinging), timeout);
                 };
               
-              next();
+              next(50);
             }
             
             return keepPinging;

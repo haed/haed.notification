@@ -106,8 +106,12 @@ public class NotificationAPI {
 			.broadcaster(broadCaster);
 		
 		// configure and disable caching
-		suspendResponseBuilder.outputComments(outputComments);
-		suspendResponseBuilder.cacheControl(cacheControl_cacheNever);
+		suspendResponseBuilder
+			.outputComments(outputComments)
+			.cacheControl(cacheControl_cacheNever);
+		
+		// also register for ping
+		NotificationMgr.getInstance().subscribe(channelID, createPingNotificationType(channelID));
 		
 	  return suspendResponseBuilder.build();
 	}
@@ -117,11 +121,11 @@ public class NotificationAPI {
 	public Response ping(
 				final @QueryParam("channelID") String channelID)
 			throws Exception {
-		
-		notificationMgr.sendData(
-				notificationMgr.getBroadcaster(channelID, true), 
-				notificationMgr.buildNotificationCtnr("haed.notification.ping." + channelID, "ping"));
-		
+		notificationMgr.sendNotification(createPingNotificationType(channelID), "ping");
 		return Response.ok().build();
+	}
+	
+	public static String createPingNotificationType(final String channelID) {
+		return "haed.notification.ping." + channelID;
 	}
 }

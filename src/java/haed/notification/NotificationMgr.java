@@ -337,11 +337,12 @@ public class NotificationMgr {
 		}
 	}
 	
-	protected void sendData(final NotificationBroadcaster broadcaster, final String data) {
+	private void sendData(final NotificationBroadcaster broadcaster, final String data) {
 		
 		// TODO [haed]: (atmosphere 0.7.2, still in 0.8) Atmosphere bugfix for long-polling, jersey, jetty-scenario
 		//   - if more than 1 message is triggered to broadcast within one async-write cycle the internal state gets broken (JerseyBroadcasterUtil#40)
 		//   - all messages would be send in parallel, but on long-polling the response will be resumed (calling listeners is not synchronized)
+		// => GitHub issue: https://github.com/Atmosphere/atmosphere/issues/81
 		try {
 			synchronized (broadcaster) {
 				broadcaster.broadcast(data).get(30, TimeUnit.SECONDS);
@@ -353,11 +354,5 @@ public class NotificationMgr {
 		// this should be the 'normal' way, on illegal state the message go to the attached cache (if exists)
 		// -> but we cache outside of atmosphere (with some optimization), so we need to synchronized/blocking-approach
 //		broadcaster.broadcast(data);
-		
-		
-		
-		// TODO [haed]: (atmosphere 0.7.2) on sending delayed broadcast queued messages are send within one response, but first message will be last, 
-		//		all others will be send in correct order (simply send some messages within a short period of time) 
-//		broadcaster.delayBroadcast(data, 200, TimeUnit.MILLISECONDS);
 	}
 }
