@@ -71,7 +71,7 @@ jQuery(".ping").click(function() {
 // initializes the channel new channel (got new channelID from server)
 haed.notification.createChannel()
   .done(function(_channel) {
-  
+      
       channel = _channel;
       
       println("created channel: " + channel.getID());

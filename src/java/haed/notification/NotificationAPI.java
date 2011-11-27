@@ -53,8 +53,23 @@ public class NotificationAPI {
 		if (channelID == null || channelID.isEmpty())
 			throw new Exception("channelID must not be null or empty");
 		
-		final NotificationBroadcaster broadCaster = notificationMgr.getBroadcaster(channelID, true);
+		NotificationBroadcaster broadCaster = notificationMgr.getBroadcaster(channelID, false);
+		if (broadCaster == null) {
+			
+			// TODO @haed [haed]: maybe we should throw an exception, only createChannel should create a new channel (with some permission checks)
+			//  => open should only open a connection to a already existing channel
+			
+			broadCaster = notificationMgr.getBroadcaster(channelID, true);
+			
+			// NOTE: ping-notification and registration should be done only on initial count, 
+			// otherwise we got an endless recursion on long-polling
+			
+			// also register for ping and ping initial
+			NotificationMgr.getInstance().subscribe(channelID, createPingNotificationType(channelID));
+			notificationMgr.sendNotification(createPingNotificationType(channelID), "ping");
+		}
 		
+		final NotificationBroadcaster _broadCaster = broadCaster;
 		final SuspendResponseBuilder<String> suspendResponseBuilder = new SuspendResponse.SuspendResponseBuilder<String>()
 			.period(1, TimeUnit.MINUTES)
 		  .addListener(new AtmosphereResourceEventListener() {
@@ -67,10 +82,10 @@ public class NotificationAPI {
 //					// touch channel session to (keep alive)
 //					HttpSessionMgr.getInstance().getSession(channelID, false);
 					
-					broadCaster.setResumed(false);
+					_broadCaster.setResumed(false);
 					
 					// process queued notifications: re-check if broadcaster was absent (because of all resources were disconnected)
-					notificationMgr.processQueue(channelID, broadCaster);
+					notificationMgr.processQueue(channelID, _broadCaster);
 				}
 				
 				public void onResume(final AtmosphereResourceEvent<HttpServletRequest, HttpServletResponse> event) {
@@ -78,7 +93,7 @@ public class NotificationAPI {
 					if (logger.isDebugEnabled())
 						logger.debug("channel with id '" + channelID + "' resumed");
 					
-					broadCaster.setResumed(true);
+					_broadCaster.setResumed(true);
 				}
 				
 				public void onDisconnect(final AtmosphereResourceEvent<HttpServletRequest, HttpServletResponse> event) {
@@ -108,9 +123,6 @@ public class NotificationAPI {
 		suspendResponseBuilder
 			.outputComments(outputComments)
 			.cacheControl(cacheControl_cacheNever);
-		
-		// also register for ping
-		NotificationMgr.getInstance().subscribe(channelID, createPingNotificationType(channelID));
 		
 	  return suspendResponseBuilder.build();
 	}
