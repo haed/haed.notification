@@ -1,25 +1,18 @@
 package haed.notification;
 
-import haed.notification.atmosphere.NotificationBroadcaster;
 import haed.notification.gson.JSONStreamingOutput;
-import haed.session.HttpSession;
-import haed.session.HttpSessionEvent;
-import haed.session.HttpSessionListener;
-import haed.session.HttpSessionMgr;
-import haed.session.HttpSessionUtil;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.log4j.Logger;
-import org.atmosphere.cpr.Broadcaster;
 import org.atmosphere.cpr.BroadcasterFactory;
+import org.atmosphere.cpr.BroadcasterLifeCyclePolicy;
+import org.atmosphere.cpr.BroadcasterLifeCyclePolicyListener;
 
 import com.google.gson.Gson;
 
@@ -31,7 +24,7 @@ public class NotificationMgr {
 	private static final Logger logger = Logger.getLogger(NotificationMgr.class);
 	
 	
-	private static final String KEY_SUBSCRIPTIONS = "haed.soa.notification.subscriptions";
+//	private static final String KEY_SUBSCRIPTIONS = "haed.soa.notification.subscriptions";
 	
 	private static NotificationMgr notificationMgr = new NotificationMgr();
 	
@@ -40,9 +33,18 @@ public class NotificationMgr {
 	}
 	
 	
+	
+	private static final BroadcasterLifeCyclePolicy broadcasterLifeCyclePolicy = 
+		new BroadcasterLifeCyclePolicy.Builder()
+			.policy(BroadcasterLifeCyclePolicy.ATMOSPHERE_RESOURCE_POLICY.NEVER)
+			.build();
+	
+	
 	/* members */
 	
 	private final Map<String, Map<String, NotificationFilter>> subscriptions = new HashMap<String, Map<String, NotificationFilter>>();
+	
+	
 	
 	/**
 	 * Holds all queued notifications by channel: mapping: channelID -> notificationID[].
@@ -57,26 +59,28 @@ public class NotificationMgr {
 	
 	private final TreeMap<Long, String> notificationCache = new TreeMap<Long, String>();
 	
+	
+	
 	private NotificationMgr() {
 		
-		HttpSessionMgr.getInstance().addSessionListener(new HttpSessionListener() {
-			
-				public void sessionCreated(final HttpSessionEvent httpSessionEvent) {}
-				
-				public void sessionDestroyed(final HttpSessionEvent httpSessionEvent) {
-					Set<String> notificationTypes = (Set<String>) httpSessionEvent.getSession().getAttribute(KEY_SUBSCRIPTIONS);
-					if (notificationTypes != null) {
-						
-						final String channelID = httpSessionEvent.getSession().getId();
-						synchronized (notificationTypes) {
-							for (String notificationType: notificationTypes)
-								unsubscribe(channelID, notificationType);
-						}
-						
-						destroyChannel(channelID);
-					}
-				}
-			});
+//		HttpSessionMgr.getInstance().addSessionListener(new HttpSessionListener() {
+//			
+//				public void sessionCreated(final HttpSessionEvent httpSessionEvent) {}
+//				
+//				public void sessionDestroyed(final HttpSessionEvent httpSessionEvent) {
+//					Set<String> notificationTypes = (Set<String>) httpSessionEvent.getSession().getAttribute(KEY_SUBSCRIPTIONS);
+//					if (notificationTypes != null) {
+//						
+//						final String channelID = httpSessionEvent.getSession().getId();
+//						synchronized (notificationTypes) {
+//							for (String notificationType: notificationTypes)
+//								unsubscribe(channelID, notificationType);
+//						}
+//						
+//						destroyChannel(channelID);
+//					}
+//				}
+//			});
 	}
 	
 	private long createNotificationID() {
@@ -90,23 +94,6 @@ public class NotificationMgr {
 		}
 		
 		return id;
-	}
-	
-	
-	private void destroyChannel(final String channelID) {
-		
-		if (logger.isDebugEnabled())
-			logger.debug("destroy channel '" + channelID + "'");
-		
-		synchronized (queues) {
-			queues.remove(channelID);
-		}
-		
-		final Broadcaster broadCaster = getBroadcaster(channelID, false);
-		if (broadCaster == null) {
-			logger.warn("broadcaster for channel '" + channelID + "' was null");
-		} else
-			broadCaster.destroy();
 	}
 	
 	
@@ -192,60 +179,113 @@ public class NotificationMgr {
 	
 	
 	
-	public NotificationBroadcaster getBroadcaster(final String channelID, final boolean createIfNull) {
-		return (NotificationBroadcaster) BroadcasterFactory.getDefault().lookup(NotificationBroadcaster.class, channelID, createIfNull);
+	protected NotificationBroadcaster getBroadcaster(final String channelID, final boolean createIfNull) {
+		
+		NotificationBroadcaster broadCaster = (NotificationBroadcaster) BroadcasterFactory.getDefault().lookup(NotificationBroadcaster.class, channelID, false);
+		if (broadCaster == null && createIfNull) {
+			
+			// instantiate new broadcaster
+			broadCaster = (NotificationBroadcaster) BroadcasterFactory.getDefault().lookup(NotificationBroadcaster.class, channelID, true);
+			
+			// set life policy explicitly
+			broadCaster.setBroadcasterLifeCyclePolicy(broadcasterLifeCyclePolicy);
+			
+			// listen to destroy
+			final NotificationBroadcaster _broadCaster = broadCaster;
+			broadCaster.addBroadcasterLifeCyclePolicyListener(new BroadcasterLifeCyclePolicyListener() {
+				
+					public void onIdle() {}
+					public void onEmpty() {}
+					
+					public void onDestroy() {
+						
+						if (logger.isDebugEnabled())
+							logger.debug("destroy channel '" + channelID + "'");
+						
+						synchronized (queues) {
+							queues.remove(channelID);
+						}
+						
+						for (final String notificationType: _broadCaster.getSubscribedNotificationTypes()) {
+							try {
+								NotificationMgr.this.unsubscribeInternal(channelID, notificationType);
+							} catch (final Exception e) {
+								logger.fatal("error on unsubscribe (on destroy), channelID: " + channelID + ", notificationType: " + notificationType);
+							}
+						}
+					}
+				});
+		}
+		
+		return broadCaster;
 	}
 	
-	public String createChannelID() {
-		return HttpSessionUtil.generateSessionId();
-	}
-	
-	public void subscribe(final String channelID, final String notificationType) {
+	public void subscribe(final String channelID, final String notificationType)
+			throws Exception {
 		subscribe(channelID, notificationType, null);
 	}
 	
-	public void subscribe(final String channelID, final String notificationType, final NotificationFilter notificationFilter) {
+	public void subscribe(final String channelID, final String notificationType, final NotificationFilter notificationFilter)
+			throws Exception {
 		
-		if (logger.isDebugEnabled())
-			logger.debug("channel '" + channelID + "' subscribes to notification type '" + notificationType + "'");
+		final NotificationBroadcaster broadcaster = getBroadcaster(channelID, false);
+		if (broadcaster == null)
+			throw new Exception("no broadcaster found, channelID: " + channelID);
 		
-		// register channel for notification type
-		Map<String, NotificationFilter> channels = subscriptions.get(notificationType);
-		if (channels == null) {
-			synchronized (subscriptions) {
-				channels = subscriptions.get(notificationType);
-				if (channels == null) {
-					channels = new HashMap<String, NotificationFilter>();
-					subscriptions.put(notificationType, channels);
-				}
-      }
-		}
+		if (broadcaster.addSubscription(notificationType)) {
+			
+			if (logger.isDebugEnabled())
+				logger.debug("channel '" + channelID + "' subscribes to notification type '" + notificationType + "'");
 		
-		synchronized (channels) {
-			channels.put(channelID, notificationFilter);
-		}
-		
-		// register notification at channel session
-		HttpSession channelSession = HttpSessionMgr.getInstance().getSession(channelID, true);
-		
-		Set<String> notificationTypes;
-		synchronized (channelSession) {
-			notificationTypes = (Set<String>) channelSession.getAttribute(KEY_SUBSCRIPTIONS);
-			if (notificationTypes == null) {
-				notificationTypes = new HashSet<String>();
-				channelSession.setAttribute(KEY_SUBSCRIPTIONS, notificationTypes);
+			// register channel for notification type
+			Map<String, NotificationFilter> channels = subscriptions.get(notificationType);
+			if (channels == null) {
+				synchronized (subscriptions) {
+					channels = subscriptions.get(notificationType);
+					if (channels == null) {
+						channels = new HashMap<String, NotificationFilter>();
+						subscriptions.put(notificationType, channels);
+					}
+	      }
+			}
+			
+			synchronized (channels) {
+				channels.put(channelID, notificationFilter);
 			}
 		}
 		
-		synchronized (notificationTypes) {
-			notificationTypes.add(notificationType);
-		}
+		
+		
+//		// register notification at channel session
+//		HttpSession channelSession = HttpSessionMgr.getInstance().getSession(channelID, true);
+//		
+//		Set<String> notificationTypes;
+//		synchronized (channelSession) {
+//			notificationTypes = (Set<String>) channelSession.getAttribute(KEY_SUBSCRIPTIONS);
+//			if (notificationTypes == null) {
+//				notificationTypes = new HashSet<String>();
+//				channelSession.setAttribute(KEY_SUBSCRIPTIONS, notificationTypes);
+//			}
+//		}
+//		
+//		synchronized (notificationTypes) {
+//			notificationTypes.add(notificationType);
+//		}
 	}
 	
-	public void unsubscribe(final String channelID, final String notificationType) {
+	public void unsubscribe(final String channelID, final String notificationType)
+			throws Exception {
 		
-		if (logger.isDebugEnabled())
-			logger.debug("channel '" + channelID + "' unsubscribes from notification type '" + notificationType + "'");
+		final NotificationBroadcaster broadcaster = getBroadcaster(channelID, false);
+		if (broadcaster == null)
+			throw new Exception("no broadcaster found, channelID: " + channelID);
+		
+		if (broadcaster.removeSubscription(notificationType))
+			unsubscribeInternal(channelID, notificationType);
+	}
+	
+	protected void unsubscribeInternal(final String channelID, final String notificationType)
+			throws Exception {
 		
 		// register channel for notification type
 		Map<String, NotificationFilter> channels = subscriptions.get(notificationType);
@@ -260,7 +300,7 @@ public class NotificationMgr {
 			// check for last channel for given notification type
 			if (channels.isEmpty()) {
 				
-				// channelIds is empty, maybe we can remove container
+				// channelIDs is empty, maybe we can remove container
 				synchronized (subscriptions) {
 					channels = subscriptions.get(notificationType);
 					if (channels != null && channels.isEmpty())
@@ -274,11 +314,11 @@ public class NotificationMgr {
 	}
 	
 	
-	public String buildNotificationCtnr(final String notificationType, final Object source) {
-		return buildNotificationCtnr(null, notificationType, source);
-	}
+//	public String buildNotificationCtnr(final String notificationType, final Object source) {
+//		return buildNotificationCtnr(null, notificationType, source);
+//	}
 	
-	public String buildNotificationCtnr(final Long id, final String notificationType, final Object source) {
+	private String buildNotificationCtnr(final Long id, final String notificationType, final Object source) {
 		
 		final Gson gson = JSONStreamingOutput.createGson();
 		
@@ -310,15 +350,24 @@ public class NotificationMgr {
 			
 			for (final Map.Entry<String, NotificationFilter> entry: channelIDs.entrySet()) {
 				
+				final String channelID = entry.getKey();
+				
+				final NotificationBroadcaster broadcaster = getBroadcaster(channelID, false);
+				if (broadcaster == null) {
+					
+					// broadcaster does not exists anymore
+					logger.warn("no broadcaster found, channelID: " + channelID + ", notificationType: " + notificationType);
+					
+					// ignore
+					continue;
+				}
+				
 				// check for filter
 				final NotificationFilter filter = entry.getValue();
 				if (filter != null && filter.isValid(source) == false)
 					continue;
 				
-				final String channelID = entry.getKey();
-				
-				final NotificationBroadcaster broadcaster = getBroadcaster(channelID, false);
-				if (broadcaster != null && broadcaster.isAvailable()) {
+				if (broadcaster.isAvailable()) {
 					
 					if (logger.isDebugEnabled())
 						logger.debug("send notification, channelID: " + channelID + ", notificationID: " + currentNotificationID + ", notificationCtnr: " + notificationCtnr);
@@ -327,8 +376,6 @@ public class NotificationMgr {
 					sendData(broadcaster, notificationCtnr);
 					
 				} else {
-					
-					// TODO @haed [haed]: add a check for valid channel (maybe channel does not exists anymore)
 					
 					// broadcaster is absent, queue notification
 					queueNotification(channelID, currentNotificationID, notificationCtnr);

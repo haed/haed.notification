@@ -16,8 +16,9 @@ public class App1 {
 	@Path("/subscribe")
 	@Produces(MediaType.TEXT_PLAIN + ";charset=utf-8")
 	public Response subscribe(
-			final @QueryParam("channelID") String channelID, 
-			final @QueryParam("topic") String topic) {
+				final @QueryParam("channelID") String channelID, 
+				final @QueryParam("topic") String topic)
+			throws Exception {
 		NotificationMgr.getInstance().subscribe(channelID, topic);
 		return Response.ok().build();
 	}

@@ -1,8 +1,6 @@
 package haed.notification;
 
-import haed.notification.atmosphere.NotificationBroadcaster;
-import haed.session.HttpSessionMgr;
-
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletRequest;
@@ -40,7 +38,8 @@ public class NotificationAPI {
 	@Path("/createChannel")
 	@Produces(MediaType.TEXT_PLAIN + ";charset=utf-8")
 	public Response createChannel() {
-		return Response.ok(notificationMgr.createChannelID()).cacheControl(cacheControl_cacheNever).build();
+		final String channelID = UUID.randomUUID().toString();
+		return Response.ok(channelID).cacheControl(cacheControl_cacheNever).build();
 	}
 	
 	@GET
@@ -65,8 +64,8 @@ public class NotificationAPI {
 					if (logger.isDebugEnabled())
 						logger.debug("channel with id '" + channelID + "' suspended");
 					
-					// touch channel session to (keep alive)
-					HttpSessionMgr.getInstance().getSession(channelID, false);
+//					// touch channel session to (keep alive)
+//					HttpSessionMgr.getInstance().getSession(channelID, false);
 					
 					broadCaster.setResumed(false);
 					

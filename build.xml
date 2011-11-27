@@ -7,7 +7,7 @@
 	<property name="srcdir" value="src/java" />
 	<property name="reldir" value="release" />
 	
-	<property name="version.num" value="0.1.2011-11-25" />
+	<property name="version.num" value="0.1.2011-11-27" />
 
 	<path id="libraries">
 		<fileset dir="${libdir}">
@@ -44,7 +44,6 @@
     <!-- create the jar file -->
     <jar basedir="${bindir}" jarfile="${reldir}/haed.notification_${version.num}.jar" compress="true">
       <include name="haed/notification/**/*" />
-    	<include name="haed/session/**/*" />
   	</jar>
   </target>
   
@@ -54,9 +53,10 @@
 	
 	<target name="release" depends="clean,build" description="builds a release">
 		
+		<!--
 		<zip destfile="haed.notification_${version.num}.zip">
     	<fileset dir="${reldir}" />
-    </zip>
+    </zip>-->
 	</target>
   
   <!-- Delete the compiled classes -->

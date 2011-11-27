@@ -1,4 +1,4 @@
-package haed.notification.atmosphere;
+package haed.notification;
 
 import java.util.Collections;
 import java.util.LinkedList;
@@ -22,11 +22,11 @@ public class NotificationBroadcasterCache implements BroadcasterCache<HttpServle
 	}
 	
 	public void start() {
-  }
+	}
 	
   public void stop() {
   }
-
+  
 	public void addToCache(final AtmosphereResource<HttpServletRequest, HttpServletResponse> resource, final Object element) {
 		
 		if (resource == null) {
