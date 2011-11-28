@@ -23,7 +23,7 @@
   
   <!-- compiles all server classes to bin directory -->
   <target name="compile" description="Compile the classes.">
-    <javac srcdir="${srcdir}" destdir="${bindir}" optimize="true">
+    <javac srcdir="${srcdir}" destdir="${bindir}" debug="true" debuglevel="lines,vars,source">
       <compilerarg value="-encoding" />
       <compilerarg value="utf-8" />
   	  <classpath refid="libraries" />

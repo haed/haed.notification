@@ -10,6 +10,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -24,8 +25,6 @@ import org.atmosphere.jersey.SuspendResponse.SuspendResponseBuilder;
 public class NotificationAPI {
 	
 	private static final Logger logger = Logger.getLogger(NotificationAPI.class);
-	
-	private static final NotificationMgr notificationMgr = NotificationMgr.getInstance();
 	
 	public static final CacheControl cacheControl_cacheNever = new CacheControl();
 	
@@ -50,6 +49,8 @@ public class NotificationAPI {
 				final @QueryParam("outputComments") @DefaultValue("false") Boolean outputComments)
 			throws Exception {
 		
+		final NotificationMgr notificationMgr = NotificationMgr.getInstance();
+		
 		if (channelID == null || channelID.isEmpty())
 			throw new Exception("channelID must not be null or empty");
 		
@@ -67,6 +68,18 @@ public class NotificationAPI {
 			// also register for ping and ping initial
 			NotificationMgr.getInstance().subscribe(channelID, createPingNotificationType(channelID));
 			notificationMgr.sendNotification(createPingNotificationType(channelID), "ping");
+			
+		} else {
+			
+			// check if channel is already connected (atmosphere bug?)
+			if (broadCaster.getAtmosphereResources().isEmpty() == false) {
+				
+				// TODO @haed [haed]: inspect atmosphere client api for "synchronized" re-connect
+				logger.warn("channel already connected, channelID: " + channelID);
+				
+				// avoid duplicate channel with exception
+				throw new WebApplicationException(Response.noContent().build());
+			}
 		}
 		
 		final NotificationBroadcaster _broadCaster = broadCaster;
@@ -132,7 +145,7 @@ public class NotificationAPI {
 	public Response ping(
 				final @QueryParam("channelID") String channelID)
 			throws Exception {
-		notificationMgr.sendNotification(createPingNotificationType(channelID), "ping");
+		NotificationMgr.getInstance().sendNotification(createPingNotificationType(channelID), "ping");
 		return Response.ok().build();
 	}
 	

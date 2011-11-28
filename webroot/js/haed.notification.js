@@ -298,28 +298,44 @@ haed.notification = (function() {
 //      var deferred = new jQuery.Deferred();
       
       var _baseURL = validateBaseURL(baseURL);
-      channels[_baseURL] = channels[_baseURL] || {};
       
-      if (channels[_baseURL]["default"]) {
-        return channels[_baseURL]["default"].deferred;
-      } else {
-//        channels[_baseURL]["default"] = { deferred: new jQuery.Deferred() };
-        return haed.notification.createChannel(_baseURL)
-          .done(function(channel) {
-              
-              channels[_baseURL]["default"] = channels[_baseURL][channel.getID()];
-            
-//              channels[_baseURL][channel.getID()] = channels[_baseURL]["default"];
-//              channels[_baseURL][channel.getID()].channel = channel;
-              
-//              haed.notification.openChannel(_baseURL, channel.getID());
-              
-//              deferred.resolve(channel);
-            });
-//          .fail(deferred.reject);
+      channels[_baseURL] = channels[_baseURL] || {};
+//      channels[_baseURL]["default"] = channels[_baseURL]["default"] || {};
+      
+      if (channels[_baseURL]["default"] === undefined) {
+        
+        channels[_baseURL]["default"] = { deferred: haed.notification.createChannel(_baseURL) };
+        
+//        return haed.notification.createChannel(_baseURL)
+//          .done(function(channel) {
+////              var p = channels[_baseURL]["default"].deferred;
+//              channels[_baseURL]["default"] = channels[_baseURL][channel.getID()];
+////              channels[_baseURL]["default"].deferred = p;
+//            });
       }
       
-//      return deferred.promise();
+      return channels[_baseURL]["default"].deferred;
+      
+//      if (channels[_baseURL]["default"]) {
+//        return channels[_baseURL]["default"].deferred;
+//      } else {
+////        channels[_baseURL]["default"] = { deferred: new jQuery.Deferred() };
+//        return haed.notification.createChannel(_baseURL)
+//          .done(function(channel) {
+//              
+//              channels[_baseURL]["default"] = channels[_baseURL][channel.getID()];
+//            
+////              channels[_baseURL][channel.getID()] = channels[_baseURL]["default"];
+////              channels[_baseURL][channel.getID()].channel = channel;
+//              
+////              haed.notification.openChannel(_baseURL, channel.getID());
+//              
+////              deferred.resolve(channel);
+//            });
+////          .fail(deferred.reject);
+//      }
+//      
+////      return deferred.promise();
     }, 
     
 //    openChannel: function() {

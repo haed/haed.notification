@@ -62,25 +62,6 @@ public class NotificationMgr {
 	
 	
 	private NotificationMgr() {
-		
-//		HttpSessionMgr.getInstance().addSessionListener(new HttpSessionListener() {
-//			
-//				public void sessionCreated(final HttpSessionEvent httpSessionEvent) {}
-//				
-//				public void sessionDestroyed(final HttpSessionEvent httpSessionEvent) {
-//					Set<String> notificationTypes = (Set<String>) httpSessionEvent.getSession().getAttribute(KEY_SUBSCRIPTIONS);
-//					if (notificationTypes != null) {
-//						
-//						final String channelID = httpSessionEvent.getSession().getId();
-//						synchronized (notificationTypes) {
-//							for (String notificationType: notificationTypes)
-//								unsubscribe(channelID, notificationType);
-//						}
-//						
-//						destroyChannel(channelID);
-//					}
-//				}
-//			});
 	}
 	
 	private long createNotificationID() {
@@ -356,7 +337,7 @@ public class NotificationMgr {
 				if (broadcaster == null) {
 					
 					// broadcaster does not exists anymore
-					logger.warn("no broadcaster found, channelID: " + channelID + ", notificationType: " + notificationType);
+					logger.warn("no broadcaster found, channelID: " + channelID + ", notificationType: " + notificationType + ", notificationCtnr: " + notificationCtnr);
 					
 					// ignore
 					continue;
