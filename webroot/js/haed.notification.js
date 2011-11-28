@@ -87,9 +87,19 @@ haed.notification = (function() {
                 
                 return function(response) {
                   
+//                  console.log("response.responseBody: " + response.responseBody);
+//                  console.log("lastResponseBody: " + lastResponseBody);
+                  
+                  
                   // HOTFIX (for 0.7.2, still in 0.8): atmosphere do not cut chunks out of the response body on polling (but in streaming it does)
                   //   => so we have to do it manually
-                  if (response.responseBody.indexOf(lastResponseBody) === 0) {
+                  if (lastResponseBody.length > 0 && response.responseBody.indexOf(lastResponseBody) === 0) {
+                    
+//                    console.log("BUG");
+//                    console.log("response.responseBody: " + response.responseBody);
+//                    console.log("lastResponseBody: " + lastResponseBody);
+                    
+                    
                     response.responseBody = response.responseBody.substring(lastResponseBody.length);
                     lastResponseBody += response.responseBody;
                   } else {
@@ -100,6 +110,9 @@ haed.notification = (function() {
                   if (response.state === "messageReceived" && response.responseBody && response.responseBody.length > 0) {
                     
                     stream += response.responseBody;
+                    
+//                    console.log("stream: " + stream);
+                    
   
                     var idx = stream.indexOf(":");
                     while (idx > -1) {
@@ -115,14 +128,14 @@ haed.notification = (function() {
                           console.log("error: " + error);
                         }
                         
+                        // finally cut stream and get next index
+                        stream = stream.substring(idx + 1 + l);
+                        idx = stream.indexOf(":");
+                        
                         // notify listeners
                         if (notification) {
                           notify(baseURL, channelID, notification);
                         }
-                        
-                        // finally cut stream and get next index
-                        stream = stream.substring(idx + 1 + l);
-                        idx = stream.indexOf(":");
                         
                       } else {
                         idx = -1;

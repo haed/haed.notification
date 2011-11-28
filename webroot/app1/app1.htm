@@ -76,7 +76,7 @@ haed.notification.createChannel()
       
       channel = _channel;
       
-      println("created channel: " + channel.getID());
+      jQuery("body").prepend("channel: " + channel.getID());
       
       jQuery(".subscribe").click(function() {
           var topic = jQuery(".topic").val();
