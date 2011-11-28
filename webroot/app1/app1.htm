@@ -53,8 +53,10 @@ var sendMessages = function(max) {
   }
 };
 
-jQuery(".stress10").click(function() { sendMessages(10); });
-jQuery(".stress100").click(function() { sendMessages(100); });
+var count = 0;
+
+jQuery(".stress10").click(function() { count=10; sendMessages(10); });
+jQuery(".stress100").click(function() { count=100; sendMessages(100); });
 
 jQuery(".ping").click(function() {
     channel.ping()
@@ -88,6 +90,12 @@ haed.notification.createChannel()
             .done(function() {
                 channel.subscribe(topic, function(message) {
                   println("received: " + message);
+                  if (count > 0) {
+                    count--
+                    if (count == 0) {
+                      println("received all messages");
+                    }
+                  }
                 });
                 println("subscribed to: " + topic);
               });

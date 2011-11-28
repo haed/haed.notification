@@ -203,14 +203,17 @@ haed.notification = (function() {
                         timeout = timeout || 60000; // initialize timeout to one minute
                         setTimeout(function(baseURL, channelID, keepPinging) {
                           return function() {
-                              haed.notification.getChannel({ baseURL: baseURL, channelID: channelID }).ping()
-                                .done(function() {
-                                    next();
-                                    keepPinging.fireOnSuccess();
-                                  })
-                                .fail(function(error) {
-                                    next(10000); // ten seconds
-                                    keepPinging.fireOnError(error);
+                              haed.notification.getChannel({ baseURL: baseURL, channelID: channelID })
+                                .done(function(channel) {
+                                    channel.ping()
+                                      .done(function() {
+                                          next();
+                                          keepPinging.fireOnSuccess();
+                                        })
+                                      .fail(function(error) {
+                                          next(10000); // ten seconds
+                                          keepPinging.fireOnError(error);
+                                        });
                                   });
                             };
                           }(baseURL, channelID, keepPinging), timeout);

@@ -24,7 +24,6 @@
       </init-param>
     </servlet>
     
-    
     <servlet>
       <servlet-name>haed.app1</servlet-name>
       <servlet-class>com.sun.jersey.spi.container.servlet.ServletContainer</servlet-class>

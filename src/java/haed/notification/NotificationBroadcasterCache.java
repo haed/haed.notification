@@ -16,23 +16,27 @@ public class NotificationBroadcasterCache implements BroadcasterCache<HttpServle
 	private static final Logger logger = Logger.getLogger(NotificationBroadcasterCache.class);
 	
 	
-	private List<Object> cache = null;
+	private LinkedList<Object> cache = null;
 	
 	public NotificationBroadcasterCache() {
 	}
 	
 	public void start() {
+		if (logger.isDebugEnabled())
+			logger.debug("start notification broadcaster cache, hashCode: " + hashCode());
 	}
 	
   public void stop() {
+  	if (logger.isDebugEnabled())
+			logger.debug("stop notification broadcaster cache, hashCode: " + hashCode());
   }
   
 	public void addToCache(final AtmosphereResource<HttpServletRequest, HttpServletResponse> resource, final Object element) {
 		
 		if (resource == null) {
 			
-			// should not happen, log
-			logger.warn("add to cache (should not happen): " + element);
+			if (logger.isDebugEnabled())
+				logger.debug("add to cache: " + element);
 			
 			synchronized (this) {
 				
@@ -40,7 +44,7 @@ public class NotificationBroadcasterCache implements BroadcasterCache<HttpServle
 					cache = new LinkedList<Object>();
 				
 				cache.add(element);
-			}
+      }
 		}
   }
 
@@ -55,7 +59,7 @@ public class NotificationBroadcasterCache implements BroadcasterCache<HttpServle
 			cache = null;
 		}
 		
-		if (logger.isDebugEnabled())
+		if (logger.isInfoEnabled())
 			logger.info("retrieve " + l.size() + " elements from cache");
 		
 		return l;

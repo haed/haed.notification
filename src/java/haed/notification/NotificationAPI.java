@@ -54,6 +54,8 @@ public class NotificationAPI {
 		if (channelID == null || channelID.isEmpty())
 			throw new Exception("channelID must not be null or empty");
 		
+		boolean sendPing = false;
+		
 		NotificationBroadcaster broadCaster = notificationMgr.getBroadcaster(channelID, false);
 		if (broadCaster == null) {
 			
@@ -62,12 +64,12 @@ public class NotificationAPI {
 			
 			broadCaster = notificationMgr.getBroadcaster(channelID, true);
 			
-			// NOTE: ping-notification and registration should be done only on initial count, 
+			// NOTE: ping-notification and registration should be done only on initial call, 
 			// otherwise we got an endless recursion on long-polling
 			
 			// also register for ping and ping initial
+			sendPing = true;
 			NotificationMgr.getInstance().subscribe(channelID, createPingNotificationType(channelID));
-			notificationMgr.sendNotification(createPingNotificationType(channelID), "ping");
 			
 		} else {
 			
@@ -97,8 +99,8 @@ public class NotificationAPI {
 					
 					_broadCaster.setResumed(false);
 					
-					// process queued notifications: re-check if broadcaster was absent (because of all resources were disconnected)
-					notificationMgr.processQueue(channelID, _broadCaster);
+//					// process queued notifications: re-check if broadcaster was absent (because of all resources were disconnected)
+//					notificationMgr.processQueue(channelID, _broadCaster);
 				}
 				
 				public void onResume(final AtmosphereResourceEvent<HttpServletRequest, HttpServletResponse> event) {
@@ -136,6 +138,9 @@ public class NotificationAPI {
 		suspendResponseBuilder
 			.outputComments(outputComments)
 			.cacheControl(cacheControl_cacheNever);
+		
+		if (sendPing)
+			notificationMgr.sendNotification(createPingNotificationType(channelID), "ping");
 		
 	  return suspendResponseBuilder.build();
 	}

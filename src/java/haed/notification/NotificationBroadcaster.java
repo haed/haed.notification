@@ -100,6 +100,20 @@ public class NotificationBroadcaster extends JerseyBroadcaster {
 		return resource;
 	}
 	
+	public void send(final Object message) {
+		
+		if (resumed || resources.isEmpty())
+			broadcasterCache.addToCache(null, message);
+		else {
+			try {
+				synchronized (this) {
+					this.broadcast(message).get(30, TimeUnit.SECONDS);
+				}
+			} catch (final Exception e) {
+				logger.fatal("error on sending message, messages will be lost: " + message, e);
+			}
+		}
+	}
 	
 	
 	@Override
@@ -110,6 +124,7 @@ public class NotificationBroadcaster extends JerseyBroadcaster {
 		// TODO @haed [haed]: atmosphere does not call BroadcasterLifeCyclePolicyListener#onDestroy on explicitly calling broadcaster#destroy().
 		//  => we have to override to trigger custom logic
 		//  - remove if atmosphere works like expected
+		//  GitHub issue: https://github.com/Atmosphere/atmosphere/issues/83
 		for (final BroadcasterLifeCyclePolicyListener b: lifeCycleListeners)
       b.onDestroy();
 	}
