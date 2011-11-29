@@ -10,7 +10,6 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -73,14 +72,14 @@ public class NotificationAPI {
 			
 		} else {
 			
-			// check if channel is already connected (atmosphere bug?)
+			// check if channel is already connected
+			// => GitHub issue: https://github.com/Atmosphere/atmosphere/issues/87
 			if (broadCaster.getAtmosphereResources().isEmpty() == false) {
 				
-				// TODO @haed [haed]: inspect atmosphere client api for "synchronized" re-connect
 				logger.warn("channel already connected, channelID: " + channelID);
 				
 				// avoid duplicate channel with exception
-				throw new WebApplicationException(Response.noContent().build());
+				throw new Exception("there is already a connected resource for channel " + channelID);
 			}
 		}
 		
