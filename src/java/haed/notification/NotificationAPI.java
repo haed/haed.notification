@@ -3,22 +3,20 @@ package haed.notification;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.apache.log4j.Logger;
-import org.atmosphere.cpr.AtmosphereResourceEvent;
-import org.atmosphere.cpr.AtmosphereResourceEventListener;
 import org.atmosphere.jersey.SuspendResponse;
 import org.atmosphere.jersey.SuspendResponse.SuspendResponseBuilder;
+import org.eclipse.jetty.http.HttpStatus;
 
 @Path("/")
 public class NotificationAPI {
@@ -79,58 +77,60 @@ public class NotificationAPI {
 				logger.warn("channel already connected, channelID: " + channelID);
 				
 				// avoid duplicate channel with exception
-				throw new Exception("there is already a connected resource for channel " + channelID);
+				throw new WebApplicationException(HttpStatus.BAD_REQUEST_400);
 			}
 		}
 		
-		final NotificationBroadcaster _broadCaster = broadCaster;
+//		final NotificationBroadcaster _broadCaster = broadCaster;
 		final SuspendResponseBuilder<String> suspendResponseBuilder = new SuspendResponse.SuspendResponseBuilder<String>()
 			.period(1, TimeUnit.MINUTES)
-		  .addListener(new AtmosphereResourceEventListener() {
-				
-				public void onSuspend(final AtmosphereResourceEvent<HttpServletRequest, HttpServletResponse> event) {
-					
-					if (logger.isDebugEnabled())
-						logger.debug("channel with id '" + channelID + "' suspended");
-					
-//					// touch channel session to (keep alive)
-//					HttpSessionMgr.getInstance().getSession(channelID, false);
-					
-					_broadCaster.setResumed(false);
-					
-//					// process queued notifications: re-check if broadcaster was absent (because of all resources were disconnected)
-//					notificationMgr.processQueue(channelID, _broadCaster);
-				}
-				
-				public void onResume(final AtmosphereResourceEvent<HttpServletRequest, HttpServletResponse> event) {
-					
-					if (logger.isDebugEnabled())
-						logger.debug("channel with id '" + channelID + "' resumed");
-					
-					_broadCaster.setResumed(true);
-				}
-				
-				public void onDisconnect(final AtmosphereResourceEvent<HttpServletRequest, HttpServletResponse> event) {
-					
-					// NOTE: disconnect also happens in "connected"-environments, e.g. on suspend timeout (after 5 minutes)
-					
-					if (logger.isDebugEnabled())
-						logger.debug("channel with id '" + channelID + "' disconnected");
-					
-					// TODO [haed]: this is uncommented for testing, maybe a "buggy" destroy kills all subscriptions
-					// 		-> if this works, we do not need a scheduled destroy on suspend, we can use onDisconnect
-					//			 (but should should also wait until destroy channel, because of reconnects on shortly network failures)
-//					// destroy channel
-//					HttpSessionMgr.getInstance().destroySession(channelID);
-				}
-				
-				public void onBroadcast(final AtmosphereResourceEvent<HttpServletRequest, HttpServletResponse> event) {
-				}
-
-				public void onThrowable(final AtmosphereResourceEvent<HttpServletRequest, HttpServletResponse> event) {
-					logger.fatal("error in atmosphere", event.throwable());
-        }
-			})
+//		  .addListener(new AtmosphereResourceEventListener() {
+//				
+//				public void onSuspend(final AtmosphereResourceEvent<HttpServletRequest, HttpServletResponse> event) {
+//					
+//					if (logger.isDebugEnabled())
+//						logger.debug("channel with id '" + channelID + "' suspended");
+//					
+////					// touch channel session to (keep alive)
+////					HttpSessionMgr.getInstance().getSession(channelID, false);
+//					
+////					_broadCaster.setResumed(false);
+//					
+////					// process queued notifications: re-check if broadcaster was absent (because of all resources were disconnected)
+////					notificationMgr.processQueue(channelID, _broadCaster);
+//					
+////				  _broadCaster.processCache();
+//				}
+//				
+//				public void onResume(final AtmosphereResourceEvent<HttpServletRequest, HttpServletResponse> event) {
+//					
+//					if (logger.isDebugEnabled())
+//						logger.debug("channel with id '" + channelID + "' resumed");
+//					
+////					_broadCaster.setResumed(true);
+//				}
+//				
+//				public void onDisconnect(final AtmosphereResourceEvent<HttpServletRequest, HttpServletResponse> event) {
+//					
+//					// NOTE: disconnect also happens in "connected"-environments, e.g. on suspend timeout (after 5 minutes)
+//					
+//					if (logger.isDebugEnabled())
+//						logger.debug("channel with id '" + channelID + "' disconnected");
+//					
+//					// TODO [haed]: this is uncommented for testing, maybe a "buggy" destroy kills all subscriptions
+//					// 		-> if this works, we do not need a scheduled destroy on suspend, we can use onDisconnect
+//					//			 (but should should also wait until destroy channel, because of reconnects on shortly network failures)
+////					// destroy channel
+////					HttpSessionMgr.getInstance().destroySession(channelID);
+//				}
+//				
+//				public void onBroadcast(final AtmosphereResourceEvent<HttpServletRequest, HttpServletResponse> event) {
+//				}
+//
+//				public void onThrowable(final AtmosphereResourceEvent<HttpServletRequest, HttpServletResponse> event) {
+//					logger.fatal("error in atmosphere", event.throwable());
+//        }
+//			})
 			.broadcaster(broadCaster);
 		
 		// configure and disable caching

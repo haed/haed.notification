@@ -55,8 +55,8 @@ var sendMessages = function(max) {
 
 var count = 0;
 
-jQuery(".stress10").click(function() { count=10; sendMessages(10); });
-jQuery(".stress100").click(function() { count=100; sendMessages(100); });
+jQuery(".stress10").click(function() { count+=10; sendMessages(10); });
+jQuery(".stress100").click(function() { count+=100; sendMessages(100); });
 
 jQuery(".ping").click(function() {
     channel.ping()

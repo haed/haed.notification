@@ -331,6 +331,10 @@ public class NotificationMgr {
 		final long currentNotificationID = createNotificationID();
 		final JSONObject notificationCtnr = buildNotificationCtnr(currentNotificationID, notificationType, source);
 		
+		
+		String message = JSONStreamingOutput.createGson().toJson(notificationCtnr);
+  	message = ((String) message).length() + ":" + message;
+		
 		synchronized (channelIDs) {
 			
 			for (final Map.Entry<String, NotificationFilter> entry: channelIDs.entrySet()) {
@@ -358,7 +362,7 @@ public class NotificationMgr {
 						logger.debug("send notification, channelID: " + channelID + ", notificationID: " + currentNotificationID + ", notificationCtnr: " + notificationCtnr);
 					
 					// send directly
-					sendData(broadcaster, notificationCtnr);
+					sendData(broadcaster, message);
 					
 //				} else {
 //					
@@ -370,13 +374,6 @@ public class NotificationMgr {
 	}
 	
 	private void sendData(final NotificationBroadcaster broadcaster, Object message) {
-		
-		if (message instanceof JSONObject) {
-  		message = JSONStreamingOutput.createGson().toJson(message);
-  		message = ((String) message).length() + ":" + message;
-  	}
-		
-		broadcaster.send(message);
 		
 //		// TODO @haed [haed]: (atmosphere 0.7.2, still in 0.8) Atmosphere bugfix for long-polling, jersey, jetty-scenario
 //		//   - if more than 1 message is triggered to broadcast within one async-write cycle the internal state gets broken (JerseyBroadcasterUtil#40)
@@ -393,5 +390,7 @@ public class NotificationMgr {
 //		// this should be the 'normal' way, on illegal state the message go to the attached cache (if exists)
 //		// -> but we cache outside of atmosphere (with some optimization), so we need to synchronized/blocking-approach
 //		broadcaster.broadcast(message);
+		
+		broadcaster.send(message);
 	}
 }

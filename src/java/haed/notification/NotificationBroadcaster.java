@@ -9,11 +9,18 @@ import java.util.Set;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import javax.servlet.http.HttpServletRequest;
+
 import org.apache.log4j.Logger;
 import org.atmosphere.cpr.AtmosphereResource;
+import org.atmosphere.cpr.AtmosphereResourceEvent;
 import org.atmosphere.cpr.AtmosphereServlet.AtmosphereConfig;
 import org.atmosphere.cpr.BroadcasterLifeCyclePolicyListener;
+import org.atmosphere.cpr.FrameworkConfig;
 import org.atmosphere.jersey.JerseyBroadcaster;
+import org.atmosphere.jersey.util.JerseyBroadcasterUtil;
+
+import com.sun.jersey.spi.container.ContainerResponse;
 
 public class NotificationBroadcaster extends JerseyBroadcaster {
 	
@@ -59,8 +66,11 @@ public class NotificationBroadcaster extends JerseyBroadcaster {
 	
 	private final Set<String> subscribedNotificationTypes = Collections.synchronizedSet(new HashSet<String>());
 	
+//	private final NotificationBroadcasterCache notificationBroadcasterCache = new NotificationBroadcasterCache();
+	
+	
 	private boolean empty = false;
-	private boolean resumed = false;
+//	private boolean resumed = false;
 	
 	public NotificationBroadcaster(final String id, final AtmosphereConfig config) {
 		super(id, config);
@@ -100,20 +110,56 @@ public class NotificationBroadcaster extends JerseyBroadcaster {
 		return resource;
 	}
 	
+	
+	// TODO @haed [haed]: remove if long-polling bug is solved (issue https://github.com/Atmosphere/atmosphere/issues/81)
+	@Override
+  protected void broadcast(final AtmosphereResource<?, ?> r, final AtmosphereResourceEvent e) {
+		
+		final ContainerResponse containerResponse = (ContainerResponse) ((HttpServletRequest) r.getRequest()).getAttribute(FrameworkConfig.CONTAINER_RESPONSE);
+    if (containerResponse == null || resources.isEmpty()) {
+    	
+    	if (logger.isInfoEnabled())
+    		logger.info("resource is not connected, re-add message to cache, channelID: " + getID() + ", message: " + e.getMessage());
+    	
+    	// resource is not connected, re-queue
+    	broadcasterCache.addToCache(null, e.getMessage());
+    	
+    } else
+    	// resource is connected, go forward
+    	JerseyBroadcasterUtil.broadcast(r, e);
+  }
+	
 	public void send(final Object message) {
 		
-		if (resumed || resources.isEmpty())
+		if (resources.isEmpty())
 			broadcasterCache.addToCache(null, message);
 		else {
-			try {
-				synchronized (this) {
-					this.broadcast(message).get(30, TimeUnit.SECONDS);
-				}
-			} catch (final Exception e) {
-				logger.fatal("error on sending message, messages will be lost: " + message, e);
-			}
+			super.broadcast(message);
+//			try {
+//				synchronized (this) {
+//					this.broadcast(message).get(30, TimeUnit.SECONDS);
+//				}
+//			} catch (final Exception e) {
+//				logger.fatal("error on sending message, messages will be lost: " + message, e);
+//			}
 		}
 	}
+	
+//	protected void processCache() {
+//		for (final Object message: notificationBroadcasterCache.retrieveFromCache(null))
+//			send(message);
+//	}
+	
+	
+//	@Override
+//	protected boolean retrieveTrackedBroadcast(final AtmosphereResource r, final AtmosphereResourceEvent e) {
+//	    List<?> missedMsg = notificationBroadcasterCache.retrieveFromCache(r);
+//	    if (!missedMsg.isEmpty()) {
+//	        e.setMessage(missedMsg);
+//	        return true;
+//	    }
+//	    return false;
+//	}
 	
 	
 	@Override
@@ -141,11 +187,11 @@ public class NotificationBroadcaster extends JerseyBroadcaster {
 		return Collections.unmodifiableSet(subscribedNotificationTypes);
 	}
 	
-	public void setResumed(final boolean resumed) {
-		this.resumed = resumed;
-	}
-	
-	public boolean isAvailable() {
-		return resumed == false;
-	}
+//	public void setResumed(final boolean resumed) {
+//		this.resumed = resumed;
+//	}
+//	
+//	public boolean isAvailable() {
+//		return resumed == false;
+//	}
 }
