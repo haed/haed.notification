@@ -16,7 +16,8 @@ public class NotificationBroadcasterCache implements BroadcasterCache<HttpServle
 	private static final Logger logger = Logger.getLogger(NotificationBroadcasterCache.class);
 	
 	
-	private LinkedList<Object> cache = null;
+//	private LinkedList<Object> cache = null;
+	private StringBuilder s = null;
 	
 	public NotificationBroadcasterCache() {
 	}
@@ -39,29 +40,48 @@ public class NotificationBroadcasterCache implements BroadcasterCache<HttpServle
 				logger.debug("add to cache: " + element);
 			
 			synchronized (this) {
-				
-				if (cache == null)
-					cache = new LinkedList<Object>();
-				
-				cache.add(element);
+					
+					if (s == null)
+						s = new StringBuilder();
+					
+					s.append((String) element);
+					
+//				if (cache == null)
+//					cache = new LinkedList<Object>();
+//				
+//				cache.add(element);
       }
 		}
   }
 
 	public List<Object> retrieveFromCache(final AtmosphereResource<HttpServletRequest, HttpServletResponse> resource) {
 		
-		if (cache == null)
+		if (s == null)
 			return Collections.EMPTY_LIST;
 		
-		final List<Object> l;
+		final List<Object> l = new LinkedList<Object>();
 		synchronized (this) {
-			l = cache;
-			cache = null;
+			l.add(s.toString());
+			s = null;
 		}
 		
 		if (logger.isInfoEnabled())
-			logger.info("retrieve " + l.size() + " elements from cache");
+			logger.info("retrieve from cache: " + l.get(0));
 		
 		return l;
+		
+//		if (cache == null)
+//			return Collections.EMPTY_LIST;
+//		
+//		final List<Object> l;
+//		synchronized (this) {
+//			l = cache;
+//			cache = null;
+//		}
+//		
+//		if (logger.isInfoEnabled())
+//			logger.info("retrieve " + l.size() + " elements from cache");
+//		
+//		return l;
   }
 }

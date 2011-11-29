@@ -22,6 +22,8 @@
         <param-name>org.atmosphere.cpr.broadcasterCacheClass</param-name>
         <param-value>haed.notification.NotificationBroadcasterCache</param-value>
       </init-param>
+      
+      <load-on-startup>1</load-on-startup>
     </servlet>
     
     <servlet>

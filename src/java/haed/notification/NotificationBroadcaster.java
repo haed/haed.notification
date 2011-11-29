@@ -69,6 +69,7 @@ public class NotificationBroadcaster extends JerseyBroadcaster {
 //	private final NotificationBroadcasterCache notificationBroadcasterCache = new NotificationBroadcasterCache();
 	
 	
+//	private boolean send = false;
 	private boolean empty = false;
 //	private boolean resumed = false;
 	
@@ -86,6 +87,7 @@ public class NotificationBroadcaster extends JerseyBroadcaster {
 			if (logger.isDebugEnabled())
 				logger.debug("remove channel '" + getID() + "' from destruction queue");
 			
+//			this.send = false;
 			this.empty = false;
 			destructionQueue.remove(getID());
 		}
@@ -110,6 +112,21 @@ public class NotificationBroadcaster extends JerseyBroadcaster {
 		return resource;
 	}
 	
+	@Override
+	protected void checkCachedAndPush(final AtmosphereResource<?, ?> r, final AtmosphereResourceEvent e) {
+		
+		// make nothing
+		
+//    retrieveTrackedBroadcast(r, e);
+//    if (e.getMessage() instanceof List && !((List) e.getMessage()).isEmpty()) {
+//        HttpServletRequest.class.cast(r.getRequest()).setAttribute(CACHED, "true");
+//        // Must make sure execute only one thread
+//        synchronized (r) {
+//            broadcast(r, e);
+//        }
+//    }
+	}
+	
 	
 	// TODO @haed [haed]: remove if long-polling bug is solved (issue https://github.com/Atmosphere/atmosphere/issues/81)
 	@Override
@@ -131,24 +148,31 @@ public class NotificationBroadcaster extends JerseyBroadcaster {
 	
 	public void send(final Object message) {
 		
-		if (resources.isEmpty())
-			broadcasterCache.addToCache(null, message);
-		else {
-			super.broadcast(message);
-//			try {
-//				synchronized (this) {
-//					this.broadcast(message).get(30, TimeUnit.SECONDS);
+		// workaround for atmosphere issue, avoid flushing 
+		// (never send more than 1 message, on 1 message the connection will be closed, otherwise only flushed => triggers reconnect)
+		// => GitHub issue: https://github.com/Atmosphere/atmosphere/issues/87
+		
+		synchronized (this) {
+			
+			if (resources.isEmpty())
+				broadcasterCache.addToCache(null, message);
+			else {
+//				try {
+//					
+//					this.send = true;
+					super.broadcast(message);
+					
+//				} catch (final Exception e) {
+//					logger.fatal("error on sending message, messages will be lost: " + message, e);
 //				}
-//			} catch (final Exception e) {
-//				logger.fatal("error on sending message, messages will be lost: " + message, e);
-//			}
+			}
 		}
 	}
 	
-//	protected void processCache() {
-//		for (final Object message: notificationBroadcasterCache.retrieveFromCache(null))
-//			send(message);
-//	}
+	protected void processCache() {
+		for (final Object message: broadcasterCache.retrieveFromCache(null))
+			send(message);
+	}
 	
 	
 //	@Override
