@@ -33,8 +33,18 @@ public class NotificationAPI {
 	@GET
 	@Path("/createChannel")
 	@Produces(MediaType.TEXT_PLAIN + ";charset=utf-8")
-	public Response createChannel() {
+	public Response createChannel()
+			throws Exception {
+		
 		final String channelID = UUID.randomUUID().toString();
+		
+		final NotificationMgr notificationMgr = NotificationMgr.getInstance();
+		notificationMgr.getBroadcaster(channelID, true);
+		
+		// also register for ping and ping initial
+		notificationMgr.subscribe(channelID, createPingNotificationType(channelID));
+		notificationMgr.sendNotification(createPingNotificationType(channelID), "ping");
+		
 		return Response.ok(channelID).cacheControl(cacheControl_cacheNever).build();
 	}
 	
@@ -51,22 +61,27 @@ public class NotificationAPI {
 		if (channelID == null || channelID.isEmpty())
 			throw new Exception("channelID must not be null or empty");
 		
-		boolean sendPing = false;
+//		boolean sendPing = false;
 		
 		NotificationBroadcaster broadCaster = notificationMgr.getBroadcaster(channelID, false);
 		if (broadCaster == null) {
 			
-			// TODO @haed [haed]: maybe we should throw an exception, only createChannel should create a new channel (with some permission checks)
-			//  => open should only open a connection to a already existing channel
+			if (logger.isDebugEnabled())
+				logger.debug("no channel found for id '" + channelID + "'");
 			
-			broadCaster = notificationMgr.getBroadcaster(channelID, true);
+			throw new WebApplicationException(HttpStatus.NOT_FOUND_404);
 			
-			// NOTE: ping-notification and registration should be done only on initial call, 
-			// otherwise we got an endless recursion on long-polling
-			
-			// also register for ping and ping initial
-			sendPing = true;
-			NotificationMgr.getInstance().subscribe(channelID, createPingNotificationType(channelID));
+//			// TODO @haed [haed]: maybe we should throw an exception, only createChannel should create a new channel (with some permission checks)
+//			//  => open should only open a connection to a already existing channel
+//			
+//			broadCaster = notificationMgr.getBroadcaster(channelID, true);
+//			
+//			// NOTE: ping-notification and registration should be done only on initial call, 
+//			// otherwise we got an endless recursion on long-polling
+//			
+//			// also register for ping and ping initial
+//			sendPing = true;
+//			NotificationMgr.getInstance().subscribe(channelID, createPingNotificationType(channelID));
 			
 		} else {
 			
@@ -138,8 +153,8 @@ public class NotificationAPI {
 			.outputComments(outputComments)
 			.cacheControl(cacheControl_cacheNever);
 		
-		if (sendPing)
-			notificationMgr.sendNotification(createPingNotificationType(channelID), "ping");
+//		if (sendPing)
+//			notificationMgr.sendNotification(createPingNotificationType(channelID), "ping");
 		
 	  return suspendResponseBuilder.build();
 	}
@@ -149,7 +164,22 @@ public class NotificationAPI {
 	public Response ping(
 				final @QueryParam("channelID") String channelID)
 			throws Exception {
-		NotificationMgr.getInstance().sendNotification(createPingNotificationType(channelID), "ping");
+		
+		final NotificationMgr notificationMgr = NotificationMgr.getInstance();
+		
+		// check if channel exists
+		final NotificationBroadcaster broadcaster = notificationMgr.getBroadcaster(channelID, false);
+		if (broadcaster == null) {
+			
+			if (logger.isDebugEnabled())
+				logger.debug("no channel found for id '" + channelID + "'");
+			
+			throw new WebApplicationException(HttpStatus.NOT_FOUND_404);
+		}
+		
+		// send ping
+		notificationMgr.sendNotification(createPingNotificationType(channelID), "ping");
+		
 		return Response.ok().build();
 	}
 	
