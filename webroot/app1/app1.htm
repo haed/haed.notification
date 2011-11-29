@@ -17,6 +17,7 @@
 <button class="stress10" style="width: 80px">send 10 Messages</button>
 <button class="stress100" style="width: 80px">send 100 Messages</button>
 <button class="ping" style="width: 80px">ping</button>
+<button class="showCount" style="width: 80px">showCount</button>
 
 <br/>
 <div class="console"></div>
@@ -57,6 +58,8 @@ var count = 0;
 
 jQuery(".stress10").click(function() { count+=10; sendMessages(10); });
 jQuery(".stress100").click(function() { count+=100; sendMessages(100); });
+
+jQuery(".showCount").click(function() { alert("count: " + count); });
 
 jQuery(".ping").click(function() {
     channel.ping()

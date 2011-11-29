@@ -150,7 +150,7 @@ haed.notification = (function() {
                 
                   callback: callback, 
                 
-//                  transport: 'long-polling', 
+                  transport: 'long-polling', 
 //                  fallbackTransport: 'long-polling', 
                   
                     // TODO [haed]: check: ie does not support streaming, also fallback will be ignored ...
@@ -159,7 +159,7 @@ haed.notification = (function() {
 //                    fallbackTransport: 'long-polling', 
                     
 //                    transport: 'websocket', 
-//                    fallbackTransport: 'polling',
+//                    fallbackTransport: 'long-polling', 
                     
                     
                     contentType: 'text/plain;charset=utf-8', 
