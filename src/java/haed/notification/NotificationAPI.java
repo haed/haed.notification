@@ -46,8 +46,9 @@ public class NotificationAPI {
 		notificationMgr.getBroadcaster(channelID, true);
 		
 		// also register for ping and ping initial
-		notificationMgr.subscribe(channelID, createPingNotificationType(channelID));
-		notificationMgr.sendNotification(createPingNotificationType(channelID), "ping");
+		final String pingNotificationType = createPingNotificationType(channelID);
+		notificationMgr.subscribe(channelID, pingNotificationType);
+		notificationMgr.sendNotification(pingNotificationType, "ping");
 		
 		return Response.ok(channelID).cacheControl(cacheControl_cacheNever).build();
 	}
@@ -100,7 +101,10 @@ public class NotificationAPI {
 		
 		final NotificationBroadcaster _broadCaster = broadCaster;
 		final SuspendResponseBuilder<String> suspendResponseBuilder = new SuspendResponse.SuspendResponseBuilder<String>()
+		
 			.period(1, TimeUnit.MINUTES)
+//		  .period(20, TimeUnit.SECONDS) // stress test setting
+		
 		  .addListener(new AtmosphereResourceEventListener() {
 				
 				public void onSuspend(final AtmosphereResourceEvent<HttpServletRequest, HttpServletResponse> event) {

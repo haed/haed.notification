@@ -147,14 +147,21 @@ haed.notification = (function() {
               
               
               jQuery.atmosphere.subscribe(baseURL + "notification/v1/openChannel?channelID=" + channelID + "&outputComments=true", null, {
-                
-                  callback: callback, 
-                
-                  transport: 'long-polling', 
-//                  fallbackTransport: 'long-polling', 
                   
-                    // TODO [haed]: check: ie does not support streaming, also fallback will be ignored ...
-                    // TODO [haed]: streaming over vodafone stick usb does not work (lost some packages)
+                  // some stress test settings
+                  timeout: 1000 * 60 * 60, // 1 hour, server timeout must be lower 
+//                  suspend: false, 
+                  
+                  callback: callback, 
+                    
+                    // TODO @haed [haed]: does not work properly, too much atmosphere issues (critical issue: https://github.com/Atmosphere/atmosphere/issues/87)
+                  transport: 'long-polling', 
+                  fallbackTransport: 'long-polling', 
+                  
+                  
+                    // TODO @haed [haed]: check: ie does not support streaming, also fallback will be ignored ...
+                    // TODO @haed [haed]: streaming over vodafone stick usb does not work (lost some packages)
+                    // TODO @haed [haed]: streaming does not re-connect after server side suspend
 //                    transport: 'streaming', 
 //                    fallbackTransport: 'long-polling', 
                     

@@ -66,7 +66,9 @@ public class NotificationBroadcaster extends JerseyBroadcaster {
 	
 	private final Set<String> subscribedNotificationTypes = Collections.synchronizedSet(new HashSet<String>());
 	
-//	private final NotificationBroadcasterCache notificationBroadcasterCache = new NotificationBroadcasterCache();
+	
+	// overrides the underlying broadcaster cache
+	private final NotificationBroadcasterCache broadcasterCache = new NotificationBroadcasterCache();
 	
 	
 //	private boolean send = false;
@@ -146,25 +148,34 @@ public class NotificationBroadcaster extends JerseyBroadcaster {
     	JerseyBroadcasterUtil.broadcast(r, e);
   }
 	
+	private boolean send = false;
+	
 	public void send(final Object message) {
 		
 		// workaround for atmosphere issue, avoid flushing 
 		// (never send more than 1 message, on 1 message the connection will be closed, otherwise only flushed => triggers reconnect)
 		// => GitHub issue: https://github.com/Atmosphere/atmosphere/issues/87
 		
-		synchronized (this) {
-			
-			if (resources.isEmpty())
-				broadcasterCache.addToCache(null, message);
-			else {
-//				try {
-//					
-//					this.send = true;
-					super.broadcast(message);
+		if (send || resources.isEmpty())
+			broadcasterCache.addToCache(null, message);
+		else {
+		
+			synchronized (this) {
+				
+				// re-check synchronized
+				if (send || resources.isEmpty())
+					broadcasterCache.addToCache(null, message);
+				
+				try {
 					
-//				} catch (final Exception e) {
-//					logger.fatal("error on sending message, messages will be lost: " + message, e);
-//				}
+					this.send = true;
+					super.broadcast(message).get(30, TimeUnit.SECONDS);
+					
+				} catch (final Exception e) {
+					logger.fatal("error on sending message, maybe message will be lost: " + message, e);
+				} finally {
+					send = false;
+				}
 			}
 		}
 	}

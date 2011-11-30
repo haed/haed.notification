@@ -37,7 +37,7 @@ public class NotificationBroadcasterCache implements BroadcasterCache<HttpServle
 		if (resource == null) {
 			
 			if (logger.isDebugEnabled())
-				logger.debug("add to cache: " + element);
+				logger.debug("add to cache, hashCode: " + hashCode() + ", message: " + element);
 			
 			synchronized (this) {
 					

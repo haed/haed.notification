@@ -206,7 +206,7 @@ jQuery.atmosphere = function() {
                     var update = false;
 
                     // Remote server disconnected us, reconnect.
-                    if (request.transport != 'polling' && (request.readyState == 2 && ajaxRequest.readyState == 4)) {
+                    if (request.transport != 'polling' && request.transport != 'long-polling' && (request.readyState == 2 && ajaxRequest.readyState == 4)) {
                         jQuery.atmosphere.reconnect(ajaxRequest, request);
                     }
                     request.readyState = ajaxRequest.readyState;
@@ -216,10 +216,15 @@ jQuery.atmosphere = function() {
                             update = true;
                         } else if (request.transport == 'streaming') {
                             update = true;
+                        } else if (request.transport == 'long-polling') {
+                            update = true;
+                            clearTimeout(request.id);
                         }
-                    } else if (!jQuery.browser.msie && ajaxRequest.readyState == 3 && ajaxRequest.status == 200) {
+                    } else if (!jQuery.browser.msie && ajaxRequest.readyState == 3 && ajaxRequest.status == 200 && request.transport != 'long-polling') {
                         update = true;
                     } else {
+                      
+                      // shouldn't timeout not cleared at reconnect?
                         clearTimeout(request.id);
                     }
 
@@ -350,7 +355,15 @@ jQuery.atmosphere = function() {
 
         reconnect : function (ajaxRequest, request) {
             jQuery.atmosphere.request = request;
+            
+            // should this not decided outside of reconnect?
             if (request.suspend && ajaxRequest.status == 200 && request.transport != 'streaming') {
+                
+//                // clear timeout for 'old'request
+//                if (request.id) {
+//                  clearTimeout(request.id);
+//                }
+              
                 jQuery.atmosphere.request.method = 'GET';
                 jQuery.atmosphere.request.data = "";
                 jQuery.atmosphere.executeRequest();
