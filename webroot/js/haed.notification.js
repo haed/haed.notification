@@ -260,9 +260,17 @@ haed.notification = (function() {
                         data: { channelID: channelID }, 
                         type: "GET"
                       })
-                    .fail(function() {
+                    .fail(function(xmlHttpRequest, textStatus, error) {
                         if (pingDeferred) {
-                          pingDeferred.reject("noConnection");
+                          if (xmlHttpRequest.status === 0) {
+                            // status 0 only occurs if the server is not available
+                            pingDeferred.reject("noConnection");
+                          } else {
+                            // the server is available, but returned an error
+                            // most likely the channel is gone here
+                            // TODO [scthi]: handle channel gone
+                            pingDeferred.reject("noPing");
+                          }
                         }
                       });
                   
