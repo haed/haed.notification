@@ -6,8 +6,10 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -28,39 +30,46 @@ public class NotificationBroadcaster extends JerseyBroadcaster {
 	
 	
 	private static final Map<String, Long> destructionQueue = Collections.synchronizedMap(new LinkedHashMap<String, Long>());
+
+
+  private static final long DESTRUCTION_CHECK_CYCLE_IN_SEC = 30;
+
+	static AtomicBoolean alreadySetExecutor=new AtomicBoolean(false);
+	static ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(1);
+	static Thread destructionCheck=new Thread() {
+    
+    @Override
+      public void run() {
+        
+        if (logger.isDebugEnabled())
+          logger.debug("check destruction queue, " + destructionQueue.size() + " elements before check");
+        
+        final long t = System.currentTimeMillis() - (1000 * 60 * 5); // destroy all broadcaster which are more than 5 minutes in destruction queue
+        
+        synchronized (destructionQueue) {
+          for (final Iterator<Map.Entry<String, Long>> iter = destructionQueue.entrySet().iterator(); iter.hasNext(); ) {
+            final Map.Entry<String, Long> entry = iter.next();
+            if (entry.getValue().longValue() < t) {
+              
+              // destroy
+              final NotificationBroadcaster broadcaster = NotificationMgr.getInstance().getBroadcaster(entry.getKey(), false);
+              if (broadcaster == null)
+                logger.warn("no broadcaster found, channelID: " + entry.getKey());
+              
+              broadcaster.destroy();
+              iter.remove();
+            } else {
+              
+              // entry is newer, break
+              return;
+            }
+          }
+        }
+      }
+    };
 	
 	static {
-		
-		new ScheduledThreadPoolExecutor(1).scheduleWithFixedDelay(new Runnable() {
-			
-				public void run() {
-					
-					if (logger.isDebugEnabled())
-						logger.debug("check destruction queue, " + destructionQueue.size() + " elements before check");
-					
-					final long t = System.currentTimeMillis() - (1000 * 60 * 5); // destroy all broadcaster which are more than 5 minutes in destruction queue
-					
-					synchronized (destructionQueue) {
-						for (final Iterator<Map.Entry<String, Long>> iter = destructionQueue.entrySet().iterator(); iter.hasNext(); ) {
-							final Map.Entry<String, Long> entry = iter.next();
-							if (entry.getValue().longValue() < t) {
-								
-								// destroy
-								final NotificationBroadcaster broadcaster = NotificationMgr.getInstance().getBroadcaster(entry.getKey(), false);
-								if (broadcaster == null)
-									logger.warn("no broadcaster found, channelID: " + entry.getKey());
-								
-								broadcaster.destroy();
-								iter.remove();
-							} else {
-								
-								// entry is newer, break
-								return;
-							}
-						}
-					}
-				}
-			}, 0, 30, TimeUnit.SECONDS);
+    scheduledThreadPoolExecutor.scheduleWithFixedDelay(destructionCheck, 0, DESTRUCTION_CHECK_CYCLE_IN_SEC, TimeUnit.SECONDS);
 	}
 	
 	
@@ -221,6 +230,15 @@ public class NotificationBroadcaster extends JerseyBroadcaster {
 	public Set<String> getSubscribedNotificationTypes() {
 		return Collections.unmodifiableSet(subscribedNotificationTypes);
 	}
+
+  public static void useExecutorService(ScheduledExecutorService service) {
+    if(alreadySetExecutor.getAndSet(true)==false) {
+      scheduledThreadPoolExecutor.shutdownNow();
+      service.scheduleWithFixedDelay(destructionCheck, 0, DESTRUCTION_CHECK_CYCLE_IN_SEC, TimeUnit.SECONDS);
+    }
+    // TODO Auto-generated method stub
+    
+  }
 	
 //	public void setResumed(final boolean resumed) {
 //		this.resumed = resumed;
