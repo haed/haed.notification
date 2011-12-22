@@ -4,6 +4,7 @@ import haed.notification.gson.JSONStreamingOutput;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.log4j.Logger;
@@ -29,6 +30,10 @@ public class NotificationMgr {
 	
 	public static NotificationMgr getInstance() {
 		return notificationMgr;
+	}
+	
+	public static void useExecutorService(ScheduledExecutorService service) {
+	  NotificationBroadcaster.useExecutorService(service);
 	}
 	
 	
