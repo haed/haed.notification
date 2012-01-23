@@ -102,8 +102,8 @@ public class NotificationAPI {
 		final NotificationBroadcaster _broadCaster = broadCaster;
 		final SuspendResponseBuilder<String> suspendResponseBuilder = new SuspendResponse.SuspendResponseBuilder<String>()
 		
-			.period(1, TimeUnit.MINUTES)
-//		  .period(20, TimeUnit.SECONDS) // stress test setting
+//			.period(1, TimeUnit.MINUTES)
+		  .period(20, TimeUnit.SECONDS) // stress test setting
 		
 		  .addListener(new AtmosphereResourceEventListener() {
 				
@@ -120,7 +120,7 @@ public class NotificationAPI {
 //					// process queued notifications: re-check if broadcaster was absent (because of all resources were disconnected)
 //					notificationMgr.processQueue(channelID, _broadCaster);
 					
-				  _broadCaster.processCache();
+//				  _broadCaster.processCache();
 				}
 				
 				public void onResume(final AtmosphereResourceEvent<HttpServletRequest, HttpServletResponse> event) {
@@ -136,7 +136,7 @@ public class NotificationAPI {
 					// NOTE: disconnect also happens in "connected"-environments, e.g. on suspend timeout (after 5 minutes)
 					
 					if (logger.isDebugEnabled())
-						logger.debug("channel with id '" + channelID + "' disconnected");
+						logger.info("channel with id '" + channelID + "' disconnected");
 					
 					// TODO [haed]: this is uncommented for testing, maybe a "buggy" destroy kills all subscriptions
 					// 		-> if this works, we do not need a scheduled destroy on suspend, we can use onDisconnect

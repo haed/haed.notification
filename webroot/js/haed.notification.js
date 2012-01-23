@@ -87,26 +87,6 @@ haed.notification = (function() {
                 
                 return function(response) {
                   
-//                  console.log("response.responseBody: " + response.responseBody);
-//                  console.log("lastResponseBody: " + lastResponseBody);
-                  
-                  
-                  // HOTFIX (for 0.7.2, still in 0.8): atmosphere do not cut chunks out of the response body on polling (but in streaming it does)
-                  //   => so we have to do it manually
-                  if (lastResponseBody.length > 0 && response.responseBody.indexOf(lastResponseBody) === 0) {
-                    
-//                    console.log("BUG");
-//                    console.log("response.responseBody: " + response.responseBody);
-//                    console.log("lastResponseBody: " + lastResponseBody);
-                    
-                    
-                    response.responseBody = response.responseBody.substring(lastResponseBody.length);
-                    lastResponseBody += response.responseBody;
-                  } else {
-                    lastResponseBody = response.responseBody;
-                  }
-                  
-                  
                   if (response.state === "messageReceived" && response.responseBody && response.responseBody.length > 0) {
                     
                     stream += response.responseBody;
@@ -147,9 +127,10 @@ haed.notification = (function() {
               
               
               jQuery.atmosphere.subscribe(baseURL + "notification/v1/openChannel?channelID=" + channelID + "&outputComments=true", null, {
-                  
+                    
                   // some stress test settings
-                  timeout: 1000 * 60 * 60, // 1 hour, server timeout must be lower 
+                  timeout: 1000 * 60 * 60, // 1 hour, server timeout must be lower
+//                  timeout: 1000 * 1, // stress test: 1sec
 //                  suspend: false, 
                   
                   callback: callback, 
@@ -287,12 +268,6 @@ haed.notification = (function() {
                 
                 subscribe: function(notificationType, callback) {
                   
-//                  haed.notification.subscribe(baseURL, channelID, notificationType, callback);
-                  
-//                  channels[baseURL] = channels[_baseURL] || {};
-//                  channels[baseURL][channelID] = channels[baseURL][channelID] || {};
-//                  channels[baseURL][channelID].subscriptions = channels[baseURL][channelID].subscriptions || {};
-                  
                   // TODO @haed subscriptions should be part of the channel instance
                   channels[baseURL][channelID].subscriptions = channels[baseURL][channelID].subscriptions || {};
                   var subscriptions = channels[baseURL][channelID].subscriptions;
@@ -326,163 +301,21 @@ haed.notification = (function() {
     
     getDefaultChannel: function(baseURL) {
       
-//      var deferred = new jQuery.Deferred();
-      
       var _baseURL = validateBaseURL(baseURL);
       
       channels[_baseURL] = channels[_baseURL] || {};
-//      channels[_baseURL]["default"] = channels[_baseURL]["default"] || {};
-      
       if (channels[_baseURL]["default"] === undefined) {
         
         channels[_baseURL]["default"] = { deferred: haed.notification.createChannel(_baseURL) };
-        
-//        return haed.notification.createChannel(_baseURL)
-//          .done(function(channel) {
-////              var p = channels[_baseURL]["default"].deferred;
-//              channels[_baseURL]["default"] = channels[_baseURL][channel.getID()];
-////              channels[_baseURL]["default"].deferred = p;
-//            });
       }
       
       return channels[_baseURL]["default"].deferred;
-      
-//      if (channels[_baseURL]["default"]) {
-//        return channels[_baseURL]["default"].deferred;
-//      } else {
-////        channels[_baseURL]["default"] = { deferred: new jQuery.Deferred() };
-//        return haed.notification.createChannel(_baseURL)
-//          .done(function(channel) {
-//              
-//              channels[_baseURL]["default"] = channels[_baseURL][channel.getID()];
-//            
-////              channels[_baseURL][channel.getID()] = channels[_baseURL]["default"];
-////              channels[_baseURL][channel.getID()].channel = channel;
-//              
-////              haed.notification.openChannel(_baseURL, channel.getID());
-//              
-////              deferred.resolve(channel);
-//            });
-////          .fail(deferred.reject);
-//      }
-//      
-////      return deferred.promise();
     }, 
-    
-//    openChannel: function() {
-//      
-//      var createCallback = function(baseURL, channelID) {
-//        
-//        var lastResponseBody = "";
-//        
-//        var stream = "";
-//        
-//        return function(response) {
-//          
-//          // HOTFIX (for 0.7.2, still in 0.8): atmosphere do not cut chunks out of the response body on polling (but in streaming it does)
-//          //   => so we have to do it manually
-//          if (response.responseBody.indexOf(lastResponseBody) === 0) {
-//            response.responseBody = response.responseBody.substring(lastResponseBody.length);
-//            lastResponseBody += response.responseBody;
-//          } else {
-//            lastResponseBody = response.responseBody;
-//          }
-//          
-//          
-//          if (response.state === "messageReceived" && response.responseBody && response.responseBody.length > 0) {
-//            
-//            stream += response.responseBody;
-//
-//            var idx = stream.indexOf(":");
-//            while (idx > -1) {
-//              var l = parseInt(stream.substring(0, idx));
-//              if (stream.length > (l + idx)) {
-//                
-//                // parse notification
-//                var notification;
-//                try {
-//                  notification = JSON.parse(stream.substring(idx + 1, idx + 1 + l));
-//                } catch (error) {
-//                  // TODO: handle and log
-//                  console.log("error: " + error);
-//                }
-//                
-//                // notify listeners
-//                if (notification) {
-//                  notify(baseURL, channelID, notification);
-//                }
-//                
-//                // finally cut stream and get next index
-//                stream = stream.substring(idx + 1 + l);
-//                idx = stream.indexOf(":");
-//                
-//              } else {
-//                idx = -1;
-//              }
-//            }
-//          }
-//        };
-//      };
-//      
-//      return function(baseURL, channelID) {
-//        
-//        var _baseURL = validateBaseURL(baseURL);
-//        
-//        channels[_baseURL] = channels[_baseURL] || {};
-//        channels[_baseURL][channelID] = channels[_baseURL][channelID] || {};
-//
-//        if (channels[_baseURL][channelID].open === undefined) {
-//          
-//          channels[_baseURL][channelID].id = channelID;
-//          channels[_baseURL][channelID].baseURL = _baseURL;
-//          
-//          channels[_baseURL][channelID].open = true;
-//          jQuery.atmosphere.subscribe(_baseURL + "notification/v1/openChannel?channelID=" + channelID + "&outputComments=true", null, {
-//              
-//              callback: createCallback(_baseURL, channelID), 
-//            
-////              transport: 'long-polling', 
-////              fallbackTransport: 'long-polling', 
-//              
-//              // TODO [haed]: check: ie does not support streaming, also fallback will be ignored ...
-//              // TODO [haed]: streaming over vodafone stick usb does not work (lost some packages)
-////              transport: 'streaming', 
-////              fallbackTransport: 'long-polling', 
-//              
-////              transport: 'websocket', 
-////              fallbackTransport: 'polling', 
-//              
-//              
-//              
-//              contentType: 'text/plain;charset=utf-8', 
-//              maxRequest: Math.pow(2, 53)
-//            });
-//        }
-//        
-//        return channels[_baseURL][channelID];
-//      };
-//    }(), 
 
     // TODO [scthi]: there should be a more convenient configure method
     setDefaultBaseURL: function(url) {
       defaultBaseURL = url;
     }
-    
-//    subscribe: function(baseURL, channelID, notificationType, func) {
-//      
-//      var _baseURL = validateBaseURL(baseURL);
-//      
-//      channels[_baseURL] = channels[_baseURL] || {};
-//      channels[_baseURL][channelID] = channels[_baseURL][channelID] || {};
-//      channels[_baseURL][channelID].subscriptions = channels[_baseURL][channelID].subscriptions || {};
-//      
-//      var subscriptions = channels[_baseURL][channelID].subscriptions;
-//      if (subscriptions[notificationType]) {
-//        subscriptions[notificationType].push(func);
-//      } else {
-//        subscriptions[notificationType] = [func];
-//      }
-//    }
   };
   
   

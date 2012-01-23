@@ -5,7 +5,7 @@ import haed.notification.gson.JSONStreamingOutput;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
 import org.atmosphere.cpr.BroadcasterFactory;
@@ -55,7 +55,7 @@ public class NotificationMgr {
 //	 */
 //	private final Map<String, LinkedList<Long>> queues = new HashMap<String, LinkedList<Long>>();
 	
-	private final AtomicInteger notificationID = new AtomicInteger(1);
+	private final AtomicLong notificationID = new AtomicLong(1);
 	
 //	private final long time2NotificationIdThreshold = 1000;
 //	private long currentTime2NotificationId = 0;
@@ -69,16 +69,7 @@ public class NotificationMgr {
 	}
 	
 	private long createNotificationID() {
-		
-		final long id = notificationID.incrementAndGet();
-		
-//		final long now = System.currentTimeMillis();
-//		if (now - currentTime2NotificationId > time2NotificationIdThreshold) {
-//			currentTime2NotificationId = now;
-//			time2NotificationId.put(currentTime2NotificationId, id);
-//		}
-		
-		return id;
+	  return notificationID.incrementAndGet();
 	}
 	
 	
