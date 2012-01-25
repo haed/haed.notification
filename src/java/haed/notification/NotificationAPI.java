@@ -64,8 +64,6 @@ public class NotificationAPI {
 		if (channelID == null || channelID.isEmpty())
 			throw new Exception("channelID must not be null or empty");
 		
-//		boolean sendPing = false;
-		
 		NotificationBroadcaster broadCaster = NotificationMgr.getInstance().getBroadcaster(channelID, false);
 		if (broadCaster == null) {
 			
@@ -73,19 +71,7 @@ public class NotificationAPI {
 				logger.debug("no channel found for id '" + channelID + "'");
 			
 			throw new WebApplicationException(HttpStatus.NOT_FOUND_404);
-			
-//			// TODO @haed [haed]: maybe we should throw an exception, only createChannel should create a new channel (with some permission checks)
-//			//  => open should only open a connection to a already existing channel
-//			
-//			broadCaster = notificationMgr.getBroadcaster(channelID, true);
-//			
-//			// NOTE: ping-notification and registration should be done only on initial call, 
-//			// otherwise we got an endless recursion on long-polling
-//			
-//			// also register for ping and ping initial
-//			sendPing = true;
-//			NotificationMgr.getInstance().subscribe(channelID, createPingNotificationType(channelID));
-			
+	  
 		} else {
 			
 			// check if channel is already connected
@@ -102,8 +88,8 @@ public class NotificationAPI {
 		final NotificationBroadcaster _broadCaster = broadCaster;
 		final SuspendResponseBuilder<String> suspendResponseBuilder = new SuspendResponse.SuspendResponseBuilder<String>()
 		
-//			.period(1, TimeUnit.MINUTES)
-		  .period(20, TimeUnit.SECONDS) // stress test setting
+			.period(1, TimeUnit.MINUTES)
+//		  .period(20, TimeUnit.SECONDS) // stress test setting
 		
 		  .addListener(new AtmosphereResourceEventListener() {
 				
@@ -112,37 +98,22 @@ public class NotificationAPI {
 					if (logger.isDebugEnabled())
 						logger.debug("channel with id '" + channelID + "' suspended");
 					
-//					// touch channel session to (keep alive)
-//					HttpSessionMgr.getInstance().getSession(channelID, false);
-					
-//					_broadCaster.setResumed(false);
-					
-//					// process queued notifications: re-check if broadcaster was absent (because of all resources were disconnected)
-//					notificationMgr.processQueue(channelID, _broadCaster);
-					
-//				  _broadCaster.processCache();
+				  _broadCaster.processCache();
 				}
 				
 				public void onResume(final AtmosphereResourceEvent<HttpServletRequest, HttpServletResponse> event) {
 					
 					if (logger.isDebugEnabled())
 						logger.debug("channel with id '" + channelID + "' resumed");
-					
-//					_broadCaster.setResumed(true);
 				}
 				
 				public void onDisconnect(final AtmosphereResourceEvent<HttpServletRequest, HttpServletResponse> event) {
 					
+				  // TODO [haed]: re-check this
 					// NOTE: disconnect also happens in "connected"-environments, e.g. on suspend timeout (after 5 minutes)
 					
 					if (logger.isDebugEnabled())
 						logger.info("channel with id '" + channelID + "' disconnected");
-					
-					// TODO [haed]: this is uncommented for testing, maybe a "buggy" destroy kills all subscriptions
-					// 		-> if this works, we do not need a scheduled destroy on suspend, we can use onDisconnect
-					//			 (but should should also wait until destroy channel, because of reconnects on shortly network failures)
-//					// destroy channel
-//					HttpSessionMgr.getInstance().destroySession(channelID);
 				}
 				
 				public void onBroadcast(final AtmosphereResourceEvent<HttpServletRequest, HttpServletResponse> event) {
@@ -158,9 +129,6 @@ public class NotificationAPI {
 		suspendResponseBuilder
 			.outputComments(outputComments)
 			.cacheControl(cacheControl_cacheNever);
-		
-//		if (sendPing)
-//			notificationMgr.sendNotification(createPingNotificationType(channelID), "ping");
 		
 	  return suspendResponseBuilder.build();
 	}
