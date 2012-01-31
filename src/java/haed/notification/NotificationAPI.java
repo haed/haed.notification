@@ -12,6 +12,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.CacheControl;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -41,6 +42,7 @@ public class NotificationAPI {
 			throws Exception {
 		
 		final String channelID = UUID.randomUUID().toString();
+//	  final String channelID = "1";
 		
 		final NotificationMgr notificationMgr = NotificationMgr.getInstance();
 		notificationMgr.getBroadcaster(channelID, true);
@@ -48,7 +50,7 @@ public class NotificationAPI {
 		// also register for ping and ping initial
 		final String pingNotificationType = createPingNotificationType(channelID);
 		notificationMgr.subscribe(channelID, pingNotificationType);
-		notificationMgr.sendNotification(pingNotificationType, "ping");
+//		notificationMgr.sendNotification(pingNotificationType, "ping");
 		
 		return Response.ok(channelID).cacheControl(cacheControl_cacheNever).build();
 	}
@@ -57,6 +59,7 @@ public class NotificationAPI {
 	@Path("/openChannel")
 	@Produces(MediaType.TEXT_PLAIN + ";charset=utf-8")
 	public SuspendResponse<String> openChannel(
+	      final @Context HttpServletRequest request, 
 				final @QueryParam("channelID") String channelID, 
 				final @QueryParam("outputComments") @DefaultValue("false") Boolean outputComments)
 			throws Exception {
@@ -64,14 +67,16 @@ public class NotificationAPI {
 		if (channelID == null || channelID.isEmpty())
 			throw new Exception("channelID must not be null or empty");
 		
-		NotificationBroadcaster broadCaster = NotificationMgr.getInstance().getBroadcaster(channelID, false);
+		final NotificationMgr notificationMgr = NotificationMgr.getInstance();
+		
+		NotificationBroadcaster broadCaster = notificationMgr.getBroadcaster(channelID, false);
 		if (broadCaster == null) {
 			
 			if (logger.isDebugEnabled())
 				logger.debug("no channel found for id '" + channelID + "'");
 			
 			throw new WebApplicationException(HttpStatus.NOT_FOUND_404);
-	  
+	    
 		} else {
 			
 			// check if channel is already connected
@@ -85,26 +90,60 @@ public class NotificationAPI {
 			}
 		}
 		
+		
+		// initialize serial
+		Long serial = SerialBroadcasterCache.parseSerial(request);
+		if (serial == null) {
+		  
+		  serial = broadCaster.getActualSerial();
+		  logger.info("initialize broadcaster serial to: " + serial);
+		  
+//		  // perform initial ping
+//		  final String pingNotificationType = createPingNotificationType(channelID);
+//		  notificationMgr.sendNotification(pingNotificationType, "ping");
+		}
+		
+		
+		// always track current serial at request
+		request.setAttribute(SerialBroadcasterCache.HEADER, serial);
+		
+		
+		final Long _serial = serial;
 		final NotificationBroadcaster _broadCaster = broadCaster;
 		final SuspendResponseBuilder<String> suspendResponseBuilder = new SuspendResponse.SuspendResponseBuilder<String>()
 		
 			.period(1, TimeUnit.MINUTES)
-//		  .period(20, TimeUnit.SECONDS) // stress test setting
+//		  .period(2, TimeUnit.SECONDS) // stress test setting
 		
 		  .addListener(new AtmosphereResourceEventListener() {
 				
 				public void onSuspend(final AtmosphereResourceEvent<HttpServletRequest, HttpServletResponse> event) {
 					
-					if (logger.isDebugEnabled())
-						logger.debug("channel with id '" + channelID + "' suspended");
+//					if (logger.isDebugEnabled())
+//						logger.debug("channel with id '" + channelID + "' suspended");
 					
-				  _broadCaster.processCache();
+//				  if (_broadCaster.processCache(event.getResource()) == false) {
+//				    
+//				    // nothing in cache, set
+//				  }
 				}
 				
 				public void onResume(final AtmosphereResourceEvent<HttpServletRequest, HttpServletResponse> event) {
 					
 					if (logger.isDebugEnabled())
 						logger.debug("channel with id '" + channelID + "' resumed");
+					
+					// set serial header (only in a serial cache environment)
+					if (_serial != -1 && event.getMessage() != null) {
+					  
+					  // we send a message, check if a serial header is set
+					  final HttpServletResponse response = event.getResource().getResponse();
+					  if (response.containsHeader(SerialBroadcasterCache.HEADER) == false) {
+					    
+					    // no header sent, set explicitly
+					    response.setHeader(SerialBroadcasterCache.HEADER, "" + (_serial.longValue() + 1));
+					  }
+					}
 				}
 				
 				public void onDisconnect(final AtmosphereResourceEvent<HttpServletRequest, HttpServletResponse> event) {
@@ -112,11 +151,14 @@ public class NotificationAPI {
 				  // TODO [haed]: re-check this
 					// NOTE: disconnect also happens in "connected"-environments, e.g. on suspend timeout (after 5 minutes)
 					
-					if (logger.isDebugEnabled())
-						logger.info("channel with id '" + channelID + "' disconnected");
+//					if (logger.isDebugEnabled())
+//						logger.info("channel with id '" + channelID + "' disconnected");
 				}
 				
 				public void onBroadcast(final AtmosphereResourceEvent<HttpServletRequest, HttpServletResponse> event) {
+				  
+				  if (logger.isDebugEnabled())
+            logger.debug("broadcast: " + event.getMessage());
 				}
 
 				public void onThrowable(final AtmosphereResourceEvent<HttpServletRequest, HttpServletResponse> event) {

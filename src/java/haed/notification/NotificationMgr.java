@@ -189,6 +189,8 @@ public class NotificationMgr {
 								logger.fatal("error on unsubscribe (on destroy), channelID: " + channelID + ", notificationType: " + notificationType);
 							}
 						}
+						
+//						_broadCaster.cache.stop();
 					}
 				});
 		}

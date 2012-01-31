@@ -17,7 +17,7 @@
 <button class="stress10" style="width: 80px">send 10 Messages</button>
 <button class="stress100" style="width: 80px">send 100 Messages</button>
 <button class="ping" style="width: 80px">ping</button>
-<button class="showCount" style="width: 80px">showCount</button>
+<span class="count" style="width: 80px">Count: 0</span>
 <button class="resetCount" style="width: 80px">resetCount</button>
 
 <br/>
@@ -56,12 +56,23 @@ var sendMessages = function(max) {
 };
 
 var count = 0;
+var incCount = function(i) {
+  count+=i;
+  jQuery(".count").text("Count: " + count);
+};
+var decCount = function(i) {
+  count-=i;
+  jQuery(".count").text("Count: " + count);
+};
+var resetCount = function() {
+  count=0;
+  jQuery(".count").text("Count: " + count);
+};
 
-jQuery(".stress10").click(function() { count+=10; sendMessages(10); });
-jQuery(".stress100").click(function() { count+=100; sendMessages(100); });
+jQuery(".stress10").click(function() { incCount(10); sendMessages(10); });
+jQuery(".stress100").click(function() { incCount(100); sendMessages(100); });
 
-jQuery(".showCount").click(function() { alert("count: " + count); });
-jQuery(".showCount").click(function() { count=0; });
+jQuery(".resetCount").click(resetCount);
 
 jQuery(".ping").click(function() {
     channel.ping()
@@ -96,7 +107,7 @@ haed.notification.createChannel()
                 channel.subscribe(topic, function(message) {
                   println("received: " + message);
                   if (count > 0) {
-                    count--
+                    decCount(1);
                     if (count == 0) {
                       println("received all messages");
                     }
