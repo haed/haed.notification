@@ -3,7 +3,7 @@
 
 <head>
   <script type="text/javascript" src="/js/jquery.js"></script>
-  <script type="text/javascript" src="/js/jquery.atmosphere.js"></script>
+  <script type="text/javascript" src="/js/jquery.atmosphere.patched.js"></script>
   <script type="text/javascript" src="/js/haed.notification.js"></script>
 </head>
 
@@ -69,8 +69,8 @@ var resetCount = function() {
   jQuery(".count").text("Count: " + count);
 };
 
-jQuery(".stress10").click(function() { incCount(10); sendMessages(10); });
-jQuery(".stress100").click(function() { incCount(100); sendMessages(100); });
+jQuery(".stress10").click(function() { sendMessages(10); });
+jQuery(".stress100").click(function() { sendMessages(100); });
 
 jQuery(".resetCount").click(resetCount);
 
@@ -106,12 +106,7 @@ haed.notification.createChannel()
             .done(function() {
                 channel.subscribe(topic, function(message) {
                   println("received: " + message);
-                  if (count > 0) {
-                    decCount(1);
-                    if (count == 0) {
-                      println("received all messages");
-                    }
-                  }
+                  incCount(1);
                 });
                 println("subscribed to: " + topic);
               });

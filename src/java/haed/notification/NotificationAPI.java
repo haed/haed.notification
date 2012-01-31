@@ -1,6 +1,5 @@
 package haed.notification;
 
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletRequest;
@@ -41,8 +40,8 @@ public class NotificationAPI {
 	public Response createChannel()
 			throws Exception {
 		
-		final String channelID = UUID.randomUUID().toString();
-//	  final String channelID = "1";
+//		final String channelID = UUID.randomUUID().toString();
+	  final String channelID = "1";
 		
 		final NotificationMgr notificationMgr = NotificationMgr.getInstance();
 		notificationMgr.getBroadcaster(channelID, true);
@@ -60,6 +59,7 @@ public class NotificationAPI {
 	@Produces(MediaType.TEXT_PLAIN + ";charset=utf-8")
 	public SuspendResponse<String> openChannel(
 	      final @Context HttpServletRequest request, 
+	      final @Context HttpServletResponse response, 
 				final @QueryParam("channelID") String channelID, 
 				final @QueryParam("outputComments") @DefaultValue("false") Boolean outputComments)
 			throws Exception {
@@ -104,8 +104,33 @@ public class NotificationAPI {
 		}
 		
 		
-		// always track current serial at request
-		request.setAttribute(SerialBroadcasterCache.HEADER, serial);
+		
+		
+		if (serial != null) {
+		  
+		  // always track current serial at request
+	    request.setAttribute(SerialBroadcasterCache.HEADER, serial);
+	    
+	    // track X-Cache-Serial
+	    response.setHeader(SerialBroadcasterCache.HEADER, "" + serial);
+      
+//      final HttpServletResponse response = event.getResource().getResponse();
+//      if (event.getMessage() == null) {
+//        
+//        // no message in, simply return same serial
+//        if (response.containsHeader(SerialBroadcasterCache.HEADER) == false)
+//          response.setHeader(SerialBroadcasterCache.HEADER, "" + _serial.longValue());
+//        
+//      } else {
+//        
+//        // we send a message, check if a serial header is set
+//        if (response.containsHeader(SerialBroadcasterCache.HEADER) == false) {
+//          
+//          // no header sent, set explicitly
+//          response.setHeader(SerialBroadcasterCache.HEADER, "" + (_serial.longValue() + 1));
+//        }
+//      }
+    }
 		
 		
 		final Long _serial = serial;
@@ -133,17 +158,26 @@ public class NotificationAPI {
 					if (logger.isDebugEnabled())
 						logger.debug("channel with id '" + channelID + "' resumed");
 					
-					// set serial header (only in a serial cache environment)
-					if (_serial != -1 && event.getMessage() != null) {
-					  
-					  // we send a message, check if a serial header is set
-					  final HttpServletResponse response = event.getResource().getResponse();
-					  if (response.containsHeader(SerialBroadcasterCache.HEADER) == false) {
-					    
-					    // no header sent, set explicitly
-					    response.setHeader(SerialBroadcasterCache.HEADER, "" + (_serial.longValue() + 1));
-					  }
-					}
+//					// set serial header (only in a serial cache environment)
+//					if (_serial != -1) {
+//					  
+//					  final HttpServletResponse response = event.getResource().getResponse();
+//					  if (event.getMessage() == null) {
+//					    
+//					    // no message in, simply return same serial
+//					    if (response.containsHeader(SerialBroadcasterCache.HEADER) == false)
+//	              response.setHeader(SerialBroadcasterCache.HEADER, "" + _serial.longValue());
+//					    
+//					  } else {
+//					    
+//  					  // we send a message, check if a serial header is set
+//  					  if (response.containsHeader(SerialBroadcasterCache.HEADER) == false) {
+//  					    
+//  					    // no header sent, set explicitly
+//  					    response.setHeader(SerialBroadcasterCache.HEADER, "" + (_serial.longValue() + 1));
+//  					  }
+//					  }
+//					}
 				}
 				
 				public void onDisconnect(final AtmosphereResourceEvent<HttpServletRequest, HttpServletResponse> event) {

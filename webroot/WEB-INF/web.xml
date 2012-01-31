@@ -21,20 +21,14 @@
       <!--
       <init-param>
         <param-name>org.atmosphere.cpr.broadcasterCacheClass</param-name>
-        <param-value>haed.notification.NotificationBroadcasterCache</param-value>
-      </init-param>
-      
-      <init-param>
-        <param-name>org.atmosphere.cpr.broadcasterCacheClass</param-name>
-        <param-value>haed.notification.SerialBroadcasterCache</param-value>
+        <param-value>org.atmosphere.cache.HeaderBroadcasterCache</param-value>
       </init-param>
       -->
       
       <init-param>
         <param-name>org.atmosphere.cpr.broadcasterCacheClass</param-name>
-        <param-value>org.atmosphere.cache.HeaderBroadcasterCache</param-value>
+        <param-value>haed.notification.SerialBroadcasterCache</param-value>
       </init-param>
-      
       
       <load-on-startup>1</load-on-startup>
     </servlet>

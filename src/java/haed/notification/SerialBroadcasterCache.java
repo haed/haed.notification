@@ -78,7 +78,6 @@ public class SerialBroadcasterCache implements BroadcasterCache<HttpServletReque
   CachedMessage head = new CachedMessage(null, 0L, null);
   CachedMessage tail = head;
   
-  // TODO: clean up strategy
   final Map<Long, CachedMessage> cache = Collections.synchronizedMap(new HashMap<Long, CachedMessage>());
   
   @Override
@@ -122,34 +121,23 @@ public class SerialBroadcasterCache implements BroadcasterCache<HttpServletReque
   @Override
   public void addToCache(final AtmosphereResource<HttpServletRequest, HttpServletResponse> r, final Object e) {
     
-//    if (e instanceof List) {
-//      throw new RuntimeException("???");
-//    }
-    
-    
     synchronized (serial) {
       
-      _addToCache(e);
-      
-//      if (r == null) {
-//        _addToCache(e);
-//      } else {
-//        
-//        Long s = parseSerial(r.getRequest());
-//        if (s == null) {
+      if (r != null) {
+        final Long s = parseSerial(r.getRequest());
+        if (s == null)
+          r.getResponse().setHeader(SerialBroadcasterCache.HEADER, "" + tail.serial);
+        else
+          r.getResponse().setHeader(SerialBroadcasterCache.HEADER, "" + (s.longValue() + 1));
+        
+//        // we send a message, check if a serial header is set
+//        final HttpServletResponse response = r.getResponse();
+//        if (response.containsHeader(SerialBroadcasterCache.HEADER) == false) {
 //          
-//          if (logger.isDebugEnabled())
-//            logger.fatal("no serial found");
-//          
-//          final CachedMessage cm = _addToCache(e);
-//          r.getResponse().setHeader(HEADER, "" + cm.serial);
-//          
-//        } else {
-//          
-//          if (s.longValue() != this.serial.get())
-//            logger.warn("found invalid serial: " + s + " (@request) != " + this.serial + " (actual)");
+//          // no header sent, set explicitly
+//          response.setHeader(SerialBroadcasterCache.HEADER, "" + (serial.longValue() + 1));
 //        }
-//      }
+      }
     }
   }
   

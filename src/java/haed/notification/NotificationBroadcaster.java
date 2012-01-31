@@ -177,7 +177,7 @@ public class NotificationBroadcaster extends JerseyBroadcaster {
 	  
 	  if (broadcasterCache instanceof SerialBroadcasterCache)
   	  // always cache if its a serial broad caster cache instance
-	    broadcasterCache.addToCache(null, message);
+	    ((SerialBroadcasterCache) broadcasterCache)._addToCache(message);
 	  
 		
 //		if (send || resources.isEmpty())
