@@ -13,6 +13,7 @@ public class App1Application extends Application {
 		singletons.add(new App1());
 	}
 	
+	@Override
 	public Set<Object> getSingletons() {
 	  return singletons;
   }

@@ -70,19 +70,11 @@ public class NotificationBroadcaster extends JerseyBroadcaster {
 	
 	private final Set<String> subscribedNotificationTypes = Collections.synchronizedSet(new HashSet<String>());
 	
-	
-	// overrides the underlying broadcaster cache
-//	final SerialBroadcasterCache cache = new SerialBroadcasterCache();
-	
-	
-//	private boolean send = false;
 	private boolean empty = false;
-//	private boolean resumed = false;
+	
 	
 	public NotificationBroadcaster(final String id, final AtmosphereConfig config) {
 		super(id, config);
-		
-//		cache.start();
   }
 	
 	@Override
@@ -95,7 +87,6 @@ public class NotificationBroadcaster extends JerseyBroadcaster {
 			if (logger.isDebugEnabled())
 				logger.debug("remove channel '" + getID() + "' from destruction queue");
 			
-//			this.send = false;
 			this.empty = false;
 			destructionQueue.remove(getID());
 		}
@@ -121,23 +112,6 @@ public class NotificationBroadcaster extends JerseyBroadcaster {
 	}
 	
 	
-	
-//	@Override
-//	protected void checkCachedAndPush(final AtmosphereResource<?, ?> r, final AtmosphereResourceEvent e) {
-//		
-//		// make nothing
-//		
-////    retrieveTrackedBroadcast(r, e);
-////    if (e.getMessage() instanceof List && !((List) e.getMessage()).isEmpty()) {
-////        HttpServletRequest.class.cast(r.getRequest()).setAttribute(CACHED, "true");
-////        // Must make sure execute only one thread
-////        synchronized (r) {
-////            broadcast(r, e);
-////        }
-////    }
-//	}
-	
-	
 	Long getActualSerial() {
 	  if (broadcasterCache instanceof SerialBroadcasterCache)
 	    return ((SerialBroadcasterCache) broadcasterCache).getActualSerial();
@@ -145,90 +119,14 @@ public class NotificationBroadcaster extends JerseyBroadcaster {
 	    return -1L;
 	}
 	
-//	// TODO @haed [haed]: remove if long-polling bug is solved (issue https://github.com/Atmosphere/atmosphere/issues/81)
-//	@Override
-//  protected void broadcast(final AtmosphereResource<?, ?> r, final AtmosphereResourceEvent e) {
-//		
-//		final ContainerResponse containerResponse = (ContainerResponse) ((HttpServletRequest) r.getRequest()).getAttribute(FrameworkConfig.CONTAINER_RESPONSE);
-//    if (containerResponse == null || resources.isEmpty()) {
-//    	
-//    	if (logger.isInfoEnabled())
-//    		logger.info("resource is not connected, re-add message to cache, channelID: " + getID() + ", message: " + e.getMessage());
-//    	
-//    	// resource is not connected, re-queue
-//    	broadcasterCache.addToCache(null, e.getMessage());
-//    	
-//    } else
-//    	// resource is connected, go forward
-//    	JerseyBroadcasterUtil.broadcast(r, e, this);
-//  }
-	
-	
-	
-	
-	private boolean send = false;
-	
 	public void send(final Object message) {
-		
-		// workaround for atmosphere issue, avoid flushing
-		// (never send more than 1 message, on 1 message the connection will be closed, otherwise only flushed => triggers reconnect)
-		// => GitHub issue: https://github.com/Atmosphere/atmosphere/issues/87
-	  
 	  
 	  if (broadcasterCache instanceof SerialBroadcasterCache)
   	  // always cache if its a serial broad caster cache instance
 	    ((SerialBroadcasterCache) broadcasterCache)._addToCache(message);
 	  
-		
-//		if (send || resources.isEmpty())
-//			broadcasterCache.addToCache(null, message);
-//		else {
-	  
 	  broadcast(message);
-		
-//			synchronized (this) {
-//				
-//				// re-check synchronized
-//				if (send || resources.isEmpty())
-//					broadcasterCache.addToCache(null, message);
-//				
-//				try {
-//					
-//					this.send = true;
-//					super.broadcast(message).get(30, TimeUnit.SECONDS);
-//					
-//				} catch (final Exception e) {
-//					logger.fatal("error on sending message, maybe message will be lost: " + message, e);
-//				} finally {
-//					send = false;
-//				}
-//			}
-//		}
 	}
-	
-//	protected boolean processCache(final AtmosphereResource<HttpServletRequest, HttpServletResponse> r) {
-//	  
-//	  final List<Object> l = cache.retrieveFromCache(r);
-//	  if (l == null || l.isEmpty())
-//	    return false;
-//	  
-//	  final StringBuilder s = new StringBuilder();
-//		for (final Object message: l)
-//		  s.append(message);
-//		broadcast(s.toString());
-//		
-//		return true;
-//	}
-	
-	
-//	protected boolean retrieveTrackedBroadcast(final AtmosphereResource r, final AtmosphereResourceEvent e) {
-//    List<?> missedMsg = cache.retrieveFromCache(r);
-//    if (!missedMsg.isEmpty()) {
-//        e.setMessage(missedMsg);
-//        return true;
-//    }
-//    return false;
-//	}
 	
 	public boolean addSubscription(final String notificationType) {
 		return subscribedNotificationTypes.add(notificationType);
@@ -248,12 +146,4 @@ public class NotificationBroadcaster extends JerseyBroadcaster {
       service.scheduleWithFixedDelay(destructionCheck, 0, DESTRUCTION_CHECK_CYCLE_IN_SEC, TimeUnit.SECONDS);
     }
   }
-	
-//	public void setResumed(final boolean resumed) {
-//		this.resumed = resumed;
-//	}
-//	
-//	public boolean isAvailable() {
-//		return resumed == false;
-//	}
 }

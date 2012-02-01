@@ -22,9 +22,6 @@ public class SerialBroadcasterCache implements BroadcasterCache<HttpServletReque
   private static final Logger logger = Logger.getLogger(SerialBroadcasterCache.class);
   
   
-  
-  
-//  static final String HEADER = HeaderConfig.X_CACHE_DATE;
   static final String HEADER = "X-Cache-Serial";
   
   private static final Set<SerialBroadcasterCache> caches = 
@@ -105,10 +102,7 @@ public class SerialBroadcasterCache implements BroadcasterCache<HttpServletReque
   CachedMessage _addToCache(final Object e) {
     
     final CachedMessage cm = new CachedMessage(serial.incrementAndGet(), e, null);
-//    if (tail == null) {
-//      head.next = tail = cm;
-//    } else
-      tail = tail.next = cm;
+    tail = tail.next = cm;
     
     cache.put(cm.serial, cm);
     
@@ -129,14 +123,6 @@ public class SerialBroadcasterCache implements BroadcasterCache<HttpServletReque
           r.getResponse().setHeader(SerialBroadcasterCache.HEADER, "" + tail.serial);
         else
           r.getResponse().setHeader(SerialBroadcasterCache.HEADER, "" + (s.longValue() + 1));
-        
-//        // we send a message, check if a serial header is set
-//        final HttpServletResponse response = r.getResponse();
-//        if (response.containsHeader(SerialBroadcasterCache.HEADER) == false) {
-//          
-//          // no header sent, set explicitly
-//          response.setHeader(SerialBroadcasterCache.HEADER, "" + (serial.longValue() + 1));
-//        }
       }
     }
   }

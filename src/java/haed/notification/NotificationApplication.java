@@ -13,6 +13,7 @@ public class NotificationApplication extends Application {
 		singletons.add(new NotificationAPI());
 	}
 	
+	@Override
 	public Set<Object> getSingletons() {
 	  return singletons;
   }

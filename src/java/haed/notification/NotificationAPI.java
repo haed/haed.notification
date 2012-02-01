@@ -1,5 +1,6 @@
 package haed.notification;
 
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletRequest;
@@ -16,8 +17,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.apache.log4j.Logger;
-import org.atmosphere.cpr.AtmosphereResourceEvent;
-import org.atmosphere.cpr.AtmosphereResourceEventListener;
 import org.atmosphere.jersey.SuspendResponse;
 import org.atmosphere.jersey.SuspendResponse.SuspendResponseBuilder;
 import org.eclipse.jetty.http.HttpStatus;
@@ -40,8 +39,8 @@ public class NotificationAPI {
 	public Response createChannel()
 			throws Exception {
 		
-//		final String channelID = UUID.randomUUID().toString();
-	  final String channelID = "1";
+		final String channelID = UUID.randomUUID().toString();
+//	  final String channelID = "1";
 		
 		final NotificationMgr notificationMgr = NotificationMgr.getInstance();
 		notificationMgr.getBroadcaster(channelID, true);
@@ -113,92 +112,14 @@ public class NotificationAPI {
 	    
 	    // track X-Cache-Serial
 	    response.setHeader(SerialBroadcasterCache.HEADER, "" + serial);
-      
-//      final HttpServletResponse response = event.getResource().getResponse();
-//      if (event.getMessage() == null) {
-//        
-//        // no message in, simply return same serial
-//        if (response.containsHeader(SerialBroadcasterCache.HEADER) == false)
-//          response.setHeader(SerialBroadcasterCache.HEADER, "" + _serial.longValue());
-//        
-//      } else {
-//        
-//        // we send a message, check if a serial header is set
-//        if (response.containsHeader(SerialBroadcasterCache.HEADER) == false) {
-//          
-//          // no header sent, set explicitly
-//          response.setHeader(SerialBroadcasterCache.HEADER, "" + (_serial.longValue() + 1));
-//        }
-//      }
     }
 		
 		
-		final Long _serial = serial;
-		final NotificationBroadcaster _broadCaster = broadCaster;
 		final SuspendResponseBuilder<String> suspendResponseBuilder = new SuspendResponse.SuspendResponseBuilder<String>()
 		
 			.period(1, TimeUnit.MINUTES)
 //		  .period(2, TimeUnit.SECONDS) // stress test setting
-		
-		  .addListener(new AtmosphereResourceEventListener() {
-				
-				public void onSuspend(final AtmosphereResourceEvent<HttpServletRequest, HttpServletResponse> event) {
-					
-//					if (logger.isDebugEnabled())
-//						logger.debug("channel with id '" + channelID + "' suspended");
-					
-//				  if (_broadCaster.processCache(event.getResource()) == false) {
-//				    
-//				    // nothing in cache, set
-//				  }
-				}
-				
-				public void onResume(final AtmosphereResourceEvent<HttpServletRequest, HttpServletResponse> event) {
-					
-					if (logger.isDebugEnabled())
-						logger.debug("channel with id '" + channelID + "' resumed");
-					
-//					// set serial header (only in a serial cache environment)
-//					if (_serial != -1) {
-//					  
-//					  final HttpServletResponse response = event.getResource().getResponse();
-//					  if (event.getMessage() == null) {
-//					    
-//					    // no message in, simply return same serial
-//					    if (response.containsHeader(SerialBroadcasterCache.HEADER) == false)
-//	              response.setHeader(SerialBroadcasterCache.HEADER, "" + _serial.longValue());
-//					    
-//					  } else {
-//					    
-//  					  // we send a message, check if a serial header is set
-//  					  if (response.containsHeader(SerialBroadcasterCache.HEADER) == false) {
-//  					    
-//  					    // no header sent, set explicitly
-//  					    response.setHeader(SerialBroadcasterCache.HEADER, "" + (_serial.longValue() + 1));
-//  					  }
-//					  }
-//					}
-				}
-				
-				public void onDisconnect(final AtmosphereResourceEvent<HttpServletRequest, HttpServletResponse> event) {
-					
-				  // TODO [haed]: re-check this
-					// NOTE: disconnect also happens in "connected"-environments, e.g. on suspend timeout (after 5 minutes)
-					
-//					if (logger.isDebugEnabled())
-//						logger.info("channel with id '" + channelID + "' disconnected");
-				}
-				
-				public void onBroadcast(final AtmosphereResourceEvent<HttpServletRequest, HttpServletResponse> event) {
-				  
-				  if (logger.isDebugEnabled())
-            logger.debug("broadcast: " + event.getMessage());
-				}
-
-				public void onThrowable(final AtmosphereResourceEvent<HttpServletRequest, HttpServletResponse> event) {
-					logger.fatal("error in atmosphere", event.throwable());
-        }
-			})
+			
 			.broadcaster(broadCaster);
 		
 		// configure and disable caching
