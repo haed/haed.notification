@@ -127,7 +127,16 @@ haed.notification = (function() {
               
               
               jQuery.atmosphere.subscribe(baseURL + "notification/v1/openChannel?channelID=" + channelID + "&outputComments=true", null, {
-                    
+                  
+                  headers: { 
+                    "X-Cache-Serial": function(ajaxRequest, request, create) {
+                      if (jQuery.atmosphere.response.headers) {
+                        return jQuery.atmosphere.response.headers["X-Cache-Serial"];
+                      }
+                    }
+                  }, 
+                  
+                  
                   // some stress test settings
                   timeout: 1000 * 60 * 60, // 1 hour, server timeout must be lower
 //                  timeout: 1000 * 1, // stress test: 1sec

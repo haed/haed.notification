@@ -49,7 +49,7 @@ jQuery.atmosphere = function() {
         response : {
             status: 200,
             responseBody : '',
-            headers : [], 
+            headers : {}, 
             state : "messageReceived",
             transport : "polling",
 
@@ -354,7 +354,7 @@ jQuery.atmosphere = function() {
                                     if (ajaxRequest.responseText.length > request.lastIndex) {
                                         try {
                                             response.status = ajaxRequest.status;
-                                            response.headers = ajaxRequest.getAllResponseHeaders();
+                                            response.headers = parseHeaders(ajaxRequest.getAllResponseHeaders());
                                         }
                                         catch(e) {
                                             response.status = 404;
@@ -381,7 +381,7 @@ jQuery.atmosphere = function() {
 
                         try {
                             response.status = ajaxRequest.status;
-                            response.headers = ajaxRequest.getAllResponseHeaders();
+                            response.headers = parseHeaders(ajaxRequest.getAllResponseHeaders());
                         }
                         catch(e) {
                             response.status = 404;
@@ -446,27 +446,16 @@ jQuery.atmosphere = function() {
             ajaxRequest.setRequestHeader("X-Atmosphere-tracking-id", jQuery.atmosphere.uuid);
             
             
-            var headers = {};
-            if (!jQuery.isArray(jQuery.atmosphere.response.headers)) {
-              
-              var tokens = jQuery.atmosphere.response.headers.split("\n");
-              jQuery.each(tokens, function(idx, token) {
-                if (token.trim().length > 0) {
-                  var a = token.split(":");
-                  headers[jQuery.trim(a[0])] = jQuery.trim(a[1]);
-                }
-              });
-            }
+            jQuery.each(request.headers, function(name, value) {
+              var h = jQuery.isFunction(value) ? value.call(this, ajaxRequest, request, create) : value;
+              if (h) {
+                ajaxRequest.setRequestHeader(name, h);
+              }
+            });
             
-            
-            if (headers["X-Cache-Serial"]) {
-              ajaxRequest.setRequestHeader("X-Cache-Serial", headers["X-Cache-Serial"]);
-            }
-            
-            
-            for (var x in request.headers) {
-                ajaxRequest.setRequestHeader(x, request.headers[x]);
-            }
+//            for (var x in request.headers) {
+//                ajaxRequest.setRequestHeader(x, request.headers[x]);
+//            }
         },
 
         reconnect : function (ajaxRequest, request, force) {
