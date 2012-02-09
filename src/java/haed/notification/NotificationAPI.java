@@ -90,6 +90,8 @@ public class NotificationAPI {
 		}
 		
 		
+		boolean sendInitialPing = false;
+		
 		// initialize serial
 		Long serial = SerialBroadcasterCache.parseSerial(request);
 		if (serial == null) {
@@ -97,22 +99,21 @@ public class NotificationAPI {
 		  serial = broadCaster.getActualSerial();
 		  logger.info("initialize broadcaster serial to: " + serial);
 		  
-//		  // perform initial ping
-//		  final String pingNotificationType = createPingNotificationType(channelID);
-//		  notificationMgr.sendNotification(pingNotificationType, "ping");
+		  sendInitialPing = true;
 		}
 		
 		
+	  // always track current serial at request/response
+    request.setAttribute(SerialBroadcasterCache.HEADER, serial);
+    response.setHeader(SerialBroadcasterCache.HEADER, "" + serial);
 		
 		
-		if (serial != null) {
+		if (sendInitialPing) {
 		  
-		  // always track current serial at request
-	    request.setAttribute(SerialBroadcasterCache.HEADER, serial);
-	    
-	    // track X-Cache-Serial
-	    response.setHeader(SerialBroadcasterCache.HEADER, "" + serial);
-    }
+		  // perform initial ping
+      final String pingNotificationType = createPingNotificationType(channelID);
+      notificationMgr.sendNotification(pingNotificationType, "ping");
+		}
 		
 		
 		final SuspendResponseBuilder<String> suspendResponseBuilder = new SuspendResponse.SuspendResponseBuilder<String>()

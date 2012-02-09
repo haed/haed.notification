@@ -304,10 +304,6 @@ haed.notification = (function() {
             }(baseURL, channelID);
         }
         
-        
-        // HACK: initial ping does not work
-        channels[baseURL][channelID].deferred.resolve(channels[baseURL][channelID].channel);
-        
         return channels[baseURL][channelID].deferred.promise();
       };
     }(), 
