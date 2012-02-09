@@ -30,16 +30,14 @@ jQuery.atmosphere = function() {
             activeRequest.abort();
         }
     });
-    
+
     var parseHeaders = function(headerString) {
-      var headers = {};
-      jQuery.each(headerString.split("\n"), function(idx, token) {
-        if (token.trim().length > 0) {
-          var a = token.split(":");
-          headers[jQuery.trim(a[0])] = jQuery.trim(a[1]);
+        var match, rheaders = /^(.*?):[ \t]*([^\r\n]*)\r?$/mg, headers = {};
+        while (match = rheaders.exec(headerString)) {
+            headers[match[1]] = match[2];
         }
-      });
-      return headers;
+
+        return headers;
     };
 
     return {
@@ -455,10 +453,10 @@ jQuery.atmosphere = function() {
             ajaxRequest.setRequestHeader("X-Atmosphere-tracking-id", jQuery.atmosphere.uuid);
 
             jQuery.each(request.headers, function(name, value) {
-              var h = jQuery.isFunction(value) ? value.call(this, ajaxRequest, request, create) : value;
-              if (h) {
-                ajaxRequest.setRequestHeader(name, h);
-              }
+                var h = jQuery.isFunction(value) ? value.call(this, ajaxRequest, request, create) : value;
+                if (h) {
+                    ajaxRequest.setRequestHeader(name, h);
+                }
             });
         },
 
@@ -496,12 +494,11 @@ jQuery.atmosphere = function() {
             }
 
             jQuery.each(request.headers, function(name, value) {
-              var h = jQuery.isFunction(value) ? value.call(this, ajaxRequest, request, create) : value;
-              if (h) {
-                url += "&" + name + "=" + h;
-              }
+                var h = jQuery.isFunction(value) ? value.call(this, ajaxRequest, request, create) : value;
+                if (h) {
+                    url += "&" + encodeURIComponent(name) + "=" + encodeURIComponent(h);
+                }
             });
-
             return url;
         },
 
