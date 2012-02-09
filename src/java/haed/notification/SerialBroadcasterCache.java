@@ -21,6 +21,7 @@ public class SerialBroadcasterCache implements BroadcasterCache<HttpServletReque
   
   
   static final String HEADER = "X-Cache-Serial";
+//  static final String HEADER = "X-Cache-Date";
   
   
   static void register(final SerialBroadcasterCache cache) {
@@ -53,7 +54,7 @@ public class SerialBroadcasterCache implements BroadcasterCache<HttpServletReque
   private final AtomicLong serial = new AtomicLong(0);
   
   
-  CachedMessage head = new CachedMessage(null, 0L, null);
+  CachedMessage head = new CachedMessage(serial.get(), null, null);
   CachedMessage tail = head;
   
   final Map<Long, CachedMessage> cache = Collections.synchronizedMap(new HashMap<Long, CachedMessage>());
@@ -133,14 +134,15 @@ public class SerialBroadcasterCache implements BroadcasterCache<HttpServletReque
     final List<Object> l = new LinkedList<Object>();
     while (cm.next != null) {
       cm = cm.next;
-      l.add(cm.message);
+      if (cm.message != null)
+        l.add(cm.message);
     }
     
     if (logger.isDebugEnabled())
-      logger.debug("retrieveFromCache, serial: " + cm.serial + ", elementCount: " + l.size() + " ,r: " + r);
+      logger.debug("retrieveFromCache, serial: " + cm.serial + ", elementCount: " + l.size() + ", r: " + r);
     
     // set header if there where some cached entries
-    if (l.isEmpty() == false)
+//    if (l.isEmpty() == false)
       r.getResponse().setHeader(HEADER, "" + cm.serial);
     
     return l;
@@ -151,7 +153,7 @@ public class SerialBroadcasterCache implements BroadcasterCache<HttpServletReque
     if (logger.isDebugEnabled())
       logger.debug("starting clean up serial broadcaster cache to serial " + serial);
     
-    while (head.next != null && head.next.serial.longValue() <= serial.longValue()) {
+    while (head.next != null && head.serial.longValue() < serial.longValue()) {
       synchronized (this.serial) {
         cache.remove(head.serial);
         head = head.next;

@@ -94,7 +94,7 @@ public class NotificationAPI {
 		
 		// initialize serial
 		Long serial = SerialBroadcasterCache.parseSerial(request);
-		if (serial == null) {
+		if (serial == null || serial.longValue() == 0) {
 		  
 		  serial = broadCaster.getActualSerial();
 		  logger.info("initialize broadcaster serial to: " + serial);

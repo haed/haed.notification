@@ -128,7 +128,12 @@ haed.notification = (function() {
               
               jQuery.atmosphere.subscribe(baseURL + "notification/v1/openChannel?channelID=" + channelID + "&outputComments=true", null, {
                   
-                  headers: { 
+                  headers: {
+//                    "X-Cache-Date": function(ajaxRequest, request, create) {
+//                      if (jQuery.atmosphere.response.headers) {
+//                        return jQuery.atmosphere.response.headers["X-Cache-Date"];
+//                      }
+//                    }
                     "X-Cache-Serial": function(ajaxRequest, request, create) {
                       if (jQuery.atmosphere.response.headers) {
                         return jQuery.atmosphere.response.headers["X-Cache-Serial"];
