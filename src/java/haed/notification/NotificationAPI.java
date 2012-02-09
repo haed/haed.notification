@@ -100,6 +100,12 @@ public class NotificationAPI {
 		  logger.info("initialize broadcaster serial to: " + serial);
 		  
 		  sendInitialPing = true;
+		  
+		} else {
+		  
+		  // each channel is associated with only one client, 
+		  // we can clean up cache
+		  broadCaster.cleanUpCache(serial);
 		}
 		
 		

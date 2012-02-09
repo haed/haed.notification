@@ -8,7 +8,7 @@ public class CachedMessage implements Serializable {
   
   public final Long serial;
   public final Object message;
-  public final long timestamp = System.currentTimeMillis();
+//  public final long timestamp = System.currentTimeMillis();
   public CachedMessage next;
 
   public CachedMessage(final Long serial, final Object message, final CachedMessage next) {

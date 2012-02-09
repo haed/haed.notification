@@ -36,8 +36,8 @@ public class NotificationBroadcaster extends JerseyBroadcaster {
         if (logger.isDebugEnabled())
           logger.debug("check destruction queue, " + destructionQueue.size() + " elements before check");
         
-        // also cleanup caches for all serial broad caster caches
-        SerialBroadcasterCache.cleanUp(1000 * 60 * 5); // 5 minutes
+//        // also cleanup caches for all serial broad caster caches
+//        SerialBroadcasterCache.cleanUp(1000 * 60 * 5); // 5 minutes
         
         final long t = System.currentTimeMillis() - (1000 * 60 * 5); // destroy all broadcaster which are more than 5 minutes in destruction queue
         
@@ -117,6 +117,11 @@ public class NotificationBroadcaster extends JerseyBroadcaster {
 	    return ((SerialBroadcasterCache) broadcasterCache).getActualSerial();
 	  else
 	    return -1L;
+	}
+	
+	
+	void cleanUpCache(Long serial) {
+	  ((SerialBroadcasterCache) broadcasterCache).cleanUp(serial);
 	}
 	
 	public void send(final Object message) {

@@ -2,11 +2,9 @@ package haed.notification;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.servlet.http.HttpServletRequest;
@@ -24,29 +22,12 @@ public class SerialBroadcasterCache implements BroadcasterCache<HttpServletReque
   
   static final String HEADER = "X-Cache-Serial";
   
-  private static final Set<SerialBroadcasterCache> caches = 
-    Collections.synchronizedSet(new HashSet<SerialBroadcasterCache>());
-  
-  static void cleanUp(long timeout) {
-    
-    if (logger.isDebugEnabled())
-      logger.debug("clean up all serial broadcaster caches");
-    
-    // TODO: optimize synchronization block
-    synchronized (caches) {
-      for (final SerialBroadcasterCache cache: caches)
-        cache._cleanUp(timeout);
-    }
-  }
   
   static void register(final SerialBroadcasterCache cache) {
-    caches.add(cache);
   }
   
   static void unregister(final SerialBroadcasterCache cache) {
-    caches.remove(cache);
   }
-  
   
   static Long parseSerial(final HttpServletRequest r) {
     
@@ -165,15 +146,13 @@ public class SerialBroadcasterCache implements BroadcasterCache<HttpServletReque
     return l;
   }
   
-  void _cleanUp(final long timeout) {
+  void cleanUp(final Long serial) {
     
     if (logger.isDebugEnabled())
-      logger.debug("starting clean up serial broadcaster cache (" + toString() + "), elements before: " + cache.size());
+      logger.debug("starting clean up serial broadcaster cache to serial " + serial);
     
-    long ts = System.currentTimeMillis() - timeout;
-    
-    while (head.next != null && head.timestamp < ts) {
-      synchronized (serial) {
+    while (head.next != null && head.next.serial.longValue() <= serial.longValue()) {
+      synchronized (this.serial) {
         cache.remove(head.serial);
         head = head.next;
       }
