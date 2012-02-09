@@ -1,6 +1,5 @@
 package haed.notification;
 
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletRequest;
@@ -26,6 +25,7 @@ public class NotificationAPI {
 	
 	private static final Logger logger = Logger.getLogger(NotificationAPI.class);
 	
+	
 	public static final CacheControl cacheControl_cacheNever = new CacheControl();
 	
 	static {
@@ -39,7 +39,7 @@ public class NotificationAPI {
 	public Response createChannel()
 			throws Exception {
 		
-		final String channelID = UUID.randomUUID().toString();
+		final String channelID = NotificationMgr.getNotificationAdapter().createChannelID();
 //	  final String channelID = "1";
 		
 		final NotificationMgr notificationMgr = NotificationMgr.getInstance();

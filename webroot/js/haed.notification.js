@@ -126,7 +126,7 @@ haed.notification = (function() {
               }(baseURL, channelID);
               
               
-              jQuery.atmosphere.subscribe(baseURL + "notification/v1/openChannel?channelID=" + channelID + "&outputComments=true", null, {
+              jQuery.atmosphere.subscribe(baseURL + "notification/v1/openChannel?channelID=" + encodeURIComponent(channelID) + "&outputComments=true", null, {
                   
                   headers: {
 //                    "X-Cache-Date": function(ajaxRequest, request, create) {

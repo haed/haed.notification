@@ -30,6 +30,16 @@ public class NotificationMgr {
 		return notificationMgr;
 	}
 	
+	private static NotificationAdapter notificationAdapter = new DefaultNotificationAdapter();
+	
+	public static NotificationAdapter getNotificationAdapter() {
+	  return notificationAdapter;
+	}
+	
+	public static void setNotificationAdapter(NotificationAdapter adapter) {
+	  notificationAdapter = adapter;
+	}
+	
 	public static void useExecutorService(ScheduledExecutorService service) {
 	  NotificationBroadcaster.useExecutorService(service);
 	}
