@@ -79,7 +79,9 @@ haed.notification = (function() {
           
           channels[baseURL][channelID] = { deferred: new jQuery.Deferred() };
           channels[baseURL][channelID].channel = function(baseURL, channelID) {
-            
+              
+              var serial = null;
+              
               var callback = function(baseURL, channelID) {
                 
                 var lastResponseBody = "";
@@ -130,10 +132,15 @@ haed.notification = (function() {
                     "X-Cache-Serial": function(ajaxRequest, request, create, response) {
                       
                       if (response && response.headers["X-Cache-Serial"]) {
-                        return response.headers["X-Cache-Serial"];
-                      } else {
-                        return null;
+                        try {
+                          var s = parseInt(response.headers["X-Cache-Serial"], 10);
+                          if (s && s > serial) {
+                            serial = s;
+                          }
+                        } catch (error) { }
                       }
+                      
+                      return serial;
                     }
                   }, 
                   
