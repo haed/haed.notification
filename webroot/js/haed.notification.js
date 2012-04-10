@@ -91,8 +91,6 @@ haed.notification = (function() {
                     
                     stream += response.responseBody;
                     
-//                    console.log("stream: " + stream);
-                    
   
                     var idx = stream.indexOf(":");
                     while (idx > -1) {
@@ -129,14 +127,12 @@ haed.notification = (function() {
               jQuery.atmosphere.subscribe(baseURL + "notification/v1/openChannel?channelID=" + encodeURIComponent(channelID) + "&outputComments=true", null, {
                   
                   headers: {
-//                    "X-Cache-Date": function(ajaxRequest, request, create) {
-//                      if (jQuery.atmosphere.response.headers) {
-//                        return jQuery.atmosphere.response.headers["X-Cache-Date"];
-//                      }
-//                    }
-                    "X-Cache-Serial": function(ajaxRequest, request, create) {
-                      if (jQuery.atmosphere.response.headers) {
-                        return jQuery.atmosphere.response.headers["X-Cache-Serial"];
+                    "X-Cache-Serial": function(ajaxRequest, request, create, response) {
+                      
+                      if (response && response.headers["X-Cache-Serial"]) {
+                        return response.headers["X-Cache-Serial"];
+                      } else {
+                        return null;
                       }
                     }
                   }, 

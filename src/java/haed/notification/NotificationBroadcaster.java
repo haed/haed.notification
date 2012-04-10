@@ -12,8 +12,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.log4j.Logger;
+import org.atmosphere.cpr.AtmosphereConfig;
 import org.atmosphere.cpr.AtmosphereResource;
-import org.atmosphere.cpr.AtmosphereServlet.AtmosphereConfig;
+import org.atmosphere.cpr.Broadcaster;
 import org.atmosphere.jersey.JerseyBroadcaster;
 
 public class NotificationBroadcaster extends JerseyBroadcaster {
@@ -78,9 +79,9 @@ public class NotificationBroadcaster extends JerseyBroadcaster {
   }
 	
 	@Override
-	public AtmosphereResource<?, ?> addAtmosphereResource(AtmosphereResource<?, ?> resource) {
+	public Broadcaster addAtmosphereResource(AtmosphereResource resource) {
 		
-		resource = super.addAtmosphereResource(resource);
+	  final Broadcaster bc = super.addAtmosphereResource(resource);
 		
 		if (this.empty && getAtmosphereResources().isEmpty() == false) {
 			
@@ -91,13 +92,13 @@ public class NotificationBroadcaster extends JerseyBroadcaster {
 			destructionQueue.remove(getID());
 		}
 		
-		return resource;
+		return bc;
 	}
 	
 	@Override
-	public AtmosphereResource<?, ?> removeAtmosphereResource(AtmosphereResource resource) {
+	public Broadcaster removeAtmosphereResource(AtmosphereResource resource) {
 		
-		resource = super.removeAtmosphereResource(resource);
+	  final Broadcaster bc = super.removeAtmosphereResource(resource);
 		
 		if (this.empty == false && getAtmosphereResources().isEmpty()) {
 			
@@ -108,7 +109,7 @@ public class NotificationBroadcaster extends JerseyBroadcaster {
 			destructionQueue.put(getID(), System.currentTimeMillis());
 		}
 		
-		return resource;
+		return bc;
 	}
 	
 	

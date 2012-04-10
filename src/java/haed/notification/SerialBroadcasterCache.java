@@ -8,20 +8,18 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
 import org.atmosphere.cpr.AtmosphereResource;
 import org.atmosphere.cpr.BroadcasterCache;
 
 // TODO: check the following scenario: broadcaster gets destroyed and re-created
-public class SerialBroadcasterCache implements BroadcasterCache<HttpServletRequest, HttpServletResponse> {
+public class SerialBroadcasterCache implements BroadcasterCache {
   
   private static final Logger logger = Logger.getLogger(SerialBroadcasterCache.class);
   
   
   static final String HEADER = "X-Cache-Serial";
-//  static final String HEADER = "X-Cache-Date";
   
   
   static void register(final SerialBroadcasterCache cache) {
@@ -95,7 +93,7 @@ public class SerialBroadcasterCache implements BroadcasterCache<HttpServletReque
   }
   
   @Override
-  public void addToCache(final AtmosphereResource<HttpServletRequest, HttpServletResponse> r, final Object e) {
+  public void addToCache(final AtmosphereResource r, final Object e) {
     
     synchronized (serial) {
       
@@ -110,7 +108,7 @@ public class SerialBroadcasterCache implements BroadcasterCache<HttpServletReque
   }
   
   @Override
-  public List<Object> retrieveFromCache(final AtmosphereResource<HttpServletRequest, HttpServletResponse> r) {
+  public List<Object> retrieveFromCache(final AtmosphereResource r) {
     
     final Long s = parseSerial(r.getRequest());
     
