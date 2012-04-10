@@ -40,6 +40,7 @@ public class JSONStreamingOutput implements StreamingOutput {
 		this.type = type;
 	}
 	
+	@Override
   public void write(final OutputStream outputStream)
   		throws IOException, WebApplicationException {
   	

@@ -5,119 +5,20 @@
   <script type="text/javascript" src="/js/jquery.js"></script>
   <script type="text/javascript" src="/js/jquery.atmosphere.js"></script>
   <script type="text/javascript" src="/js/haed.notification.js"></script>
+  <script type="text/javascript" src="/js/app1.js"></script>
+  
+  <style type="text/css">
+    .channel-widget { float: left; width: 600px }
+  </style>
 </head>
 
 <body>
-
-<br/><input class="topic" type="text" /><button class="subscribe" style="width: 80px">Subscribe</button>
-<br/><input class="message" type="text" style="width: 400px" /><button class="send" style="width: 80px">Send</button>
-
-<br/>
-<button class="clear" style="width: 80px">Clear</button>
-<button class="stress10" style="width: 80px">send 10 Messages</button>
-<button class="stress100" style="width: 80px">send 100 Messages</button>
-<button class="ping" style="width: 80px">ping</button>
-<span class="count" style="width: 80px">Count: 0</span>
-<button class="resetCount" style="width: 80px">resetCount</button>
-
-<br/>
-<div class="console"></div>
-
+<div class='page' />
 
 <script type="text/javascript">
-
-/* clears output */
-jQuery(".clear").click(function() {
-    jQuery(".console").html("");
-  });
-
-var println = function(text) {
-  jQuery(".console")
-    .prepend(jQuery("<div>" + text + "</div>"));
-};
-
-
-// the channel to use
-var channel;
-
-var sendMessage = function(topic, message) {
-  return jQuery.ajax("/haed.app1/send", {
-        type: "GET", 
-        data: { topic: topic, message: message }
-      })
-    .done(function() { println("send to " + topic + ": " + message); });
-};
-
-var sendMessages = function(max) {
-  var topic = jQuery(".topic").val();
-  for (var i = 1; i <= max; i++) {
-    sendMessage(topic, "stress1, message " + i + "/" + max);
-  }
-};
-
-var count = 0;
-var incCount = function(i) {
-  count+=i;
-  jQuery(".count").text("Count: " + count);
-};
-var decCount = function(i) {
-  count-=i;
-  jQuery(".count").text("Count: " + count);
-};
-var resetCount = function() {
-  count=0;
-  jQuery(".count").text("Count: " + count);
-};
-
-jQuery(".stress10").click(function() { sendMessages(10); });
-jQuery(".stress100").click(function() { sendMessages(100); });
-
-jQuery(".resetCount").click(resetCount);
-
-jQuery(".ping").click(function() {
-    channel.ping()
-      .done(function() {
-          alert("ping was successful")
-        })
-      .fail(function(error) {
-          alert("ping failed: " + error)
-        });
-  });
-
-
-
-// initializes the channel new channel (got new channelID from server)
-haed.notification.createChannel()
-  .done(function(_channel) {
-      
-      channel = _channel;
-      
-      jQuery("body").prepend("channel: " + channel.getID());
-      
-      jQuery(".subscribe").click(function() {
-          var topic = jQuery(".topic").val();
-          jQuery.ajax("/haed.app1/subscribe", {
-                type: "GET", 
-                data: {
-                  channelID: channel.getID(), 
-                  topic: topic
-                }
-              })
-            .done(function() {
-                channel.subscribe(topic, function(message) {
-                  println("received: " + message);
-                  incCount(1);
-                });
-                println("subscribed to: " + topic);
-              });
-        });
-      
-      jQuery(".send").click(function() {
-          sendMessage(jQuery(".topic").val(), jQuery(".message").val())
-            .done(function() { jQuery(".message").val(""); });
-        });
-    });
-  
+  new app1.ChannelWidget();
+  new app1.ChannelWidget();
+  //new app1.ChannelWidget();
 </script>
 
 </body>

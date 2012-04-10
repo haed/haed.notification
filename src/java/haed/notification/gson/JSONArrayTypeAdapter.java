@@ -12,6 +12,7 @@ import com.google.gson.JsonSerializer;
 
 public class JSONArrayTypeAdapter implements JsonSerializer<JSONArray> {
 	
+  @Override
 	public JsonElement serialize(final JSONArray src, final Type typeOfSrc, final JsonSerializationContext context) {
 		
 		try {

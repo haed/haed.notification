@@ -13,6 +13,7 @@ import com.google.gson.JsonSerializer;
 
 public class JSONObjectTypeAdapter implements JsonSerializer<JSONObject> {
 	
+  @Override
 	public JsonElement serialize(final JSONObject src, final Type typeOfSrc, final JsonSerializationContext context) {
 		
 		try {
