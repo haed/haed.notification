@@ -18,6 +18,7 @@ import javax.ws.rs.core.Response;
 import org.apache.log4j.Logger;
 import org.atmosphere.jersey.SuspendResponse;
 import org.atmosphere.jersey.SuspendResponse.SuspendResponseBuilder;
+import org.eclipse.jetty.http.HttpHeaders;
 import org.eclipse.jetty.http.HttpStatus;
 
 @Path("/")
@@ -40,7 +41,6 @@ public class NotificationAPI {
 			throws Exception {
 		
 		final String channelID = NotificationMgr.getNotificationAdapter().createChannelID();
-//	  final String channelID = "1";
 		
 		final NotificationMgr notificationMgr = NotificationMgr.getInstance();
 		notificationMgr.getBroadcaster(channelID, true);
@@ -51,6 +51,33 @@ public class NotificationAPI {
 //		notificationMgr.sendNotification(pingNotificationType, "ping");
 		
 		return Response.ok(channelID).cacheControl(cacheControl_cacheNever).build();
+	}
+	
+	private String debug(HttpServletRequest httpServletRequest) {
+	  
+	  final StringBuilder debug = new StringBuilder();
+	  
+    final String referer = httpServletRequest.getHeader("referer");
+    if (referer != null)
+      debug.append(", referer=").append(referer);
+    
+    final String userAgent = httpServletRequest.getHeader(HttpHeaders.USER_AGENT);
+    if (userAgent != null)
+      debug.append(", user-agent=").append(userAgent);
+    
+    final String remoteHost = httpServletRequest.getRemoteHost();
+    if (remoteHost != null)
+      debug.append(", remoteHost=").append(remoteHost);
+    
+    final String remoteAddr = httpServletRequest.getRemoteAddr();
+    if (remoteAddr != null)
+      debug.append(", remoteAddr=").append(remoteAddr);
+    
+    final String xForwardedFor = httpServletRequest.getHeader(HttpHeaders.X_FORWARDED_FOR);
+    if (xForwardedFor != null)
+      debug.append(", ").append(HttpHeaders.X_FORWARDED_FOR).append("=").append(xForwardedFor);
+    
+    return debug.toString();
 	}
 	
 	@GET
@@ -72,7 +99,7 @@ public class NotificationAPI {
 		if (broadCaster == null) {
 			
 			if (logger.isDebugEnabled())
-				logger.debug("no channel found for id '" + channelID + "'");
+				logger.debug("no channel found for id '" + channelID + "'" + debug(request));
 			
 			throw new WebApplicationException(HttpStatus.NOT_FOUND_404);
 	    
@@ -82,7 +109,7 @@ public class NotificationAPI {
 			// => GitHub issue: https://github.com/Atmosphere/atmosphere/issues/87
 			if (broadCaster.getAtmosphereResources().isEmpty() == false) {
 				
-				logger.warn("channel already connected, channelID: " + channelID);
+			  logger.warn("channel already connected, channelID: " + channelID + debug(request));
 				
 //				// avoid duplicate channel with exception
 //				throw new WebApplicationException(HttpStatus.BAD_REQUEST_400);
@@ -97,7 +124,7 @@ public class NotificationAPI {
 		if (serial == null || serial.longValue() == 0) {
 		  
 		  serial = broadCaster.getActualSerial();
-		  logger.info("initialize broadcaster serial to: " + serial);
+		  logger.info("initialize broadcaster serial to: " + serial + ", channelID: " + channelID + debug(request));
 		  
 		  sendInitialPing = true;
 		  
