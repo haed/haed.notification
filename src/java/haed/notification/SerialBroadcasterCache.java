@@ -19,7 +19,9 @@ public class SerialBroadcasterCache implements BroadcasterCache {
   private static final Logger logger = Logger.getLogger(SerialBroadcasterCache.class);
   
   
-  static final String HEADER = "X-Cache-Serial";
+  //static final String HEADER = "X-Cache-Serial";
+  static final String HEADER = "Expires";
+  
   
   
   static void register(final SerialBroadcasterCache cache) {

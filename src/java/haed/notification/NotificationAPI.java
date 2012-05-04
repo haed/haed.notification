@@ -1,11 +1,13 @@
 package haed.notification;
 
+import java.net.URI;
 import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.OPTIONS;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
@@ -34,11 +36,55 @@ public class NotificationAPI {
 		cacheControl_cacheNever.setNoCache(true);
 	}
 	
+	
+	private static final String headers = 
+	  "X-Atmosphere-Framework, X-Atmosphere-tracking-id, X-Atmosphere-Transport, X-Cache-Date, " + SerialBroadcasterCache.HEADER;
+	
+	
+	static void enableCORS(final HttpServletRequest request, final HttpServletResponse response)
+	    throws Exception {
+    
+    String allowOrigin = "*";
+    try {
+      final String referrerHeader = request.getHeader("referer");
+      if (referrerHeader != null && referrerHeader.trim().isEmpty() == false) {
+        final URI referrerURI = new URI(referrerHeader);
+        allowOrigin = referrerURI.getScheme() + "://" + referrerURI.getAuthority();
+      }
+    } catch (final Throwable t) {
+      logger.fatal("error on checking referrer", t);
+    }
+    
+    response.setHeader("Access-Control-Allow-Credentials", "true");
+    response.setHeader("Access-Control-Allow-Headers", headers);
+    response.setHeader("Access-Control-Allow-Origin", allowOrigin);
+    response.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    response.setHeader("Access-Control-Expose-Headers", headers);
+	}
+	
+	public static String createPingNotificationType(final String channelID) {
+    return "haed.notification.ping." + channelID;
+  }
+	
+	
+	@OPTIONS
+  @Path("/createChannel")
+  public void createChannel_OPTIONS(
+        final @Context HttpServletRequest request, 
+        final @Context HttpServletResponse response)
+      throws Exception {
+    enableCORS(request, response);
+  }
+	
 	@GET
 	@Path("/createChannel")
 	@Produces(MediaType.TEXT_PLAIN + ";charset=utf-8")
-	public Response createChannel()
+	public Response createChannel_GET(
+	      final @Context HttpServletRequest request, 
+	      final @Context HttpServletResponse response)
 			throws Exception {
+	  
+	  enableCORS(request, response);
 		
 		final String channelID = NotificationMgr.getNotificationAdapter().createChannelID();
 		
@@ -53,42 +99,26 @@ public class NotificationAPI {
 		return Response.ok(channelID).cacheControl(cacheControl_cacheNever).build();
 	}
 	
-	private String debug(HttpServletRequest httpServletRequest) {
-	  
-	  final StringBuilder debug = new StringBuilder();
-	  
-    final String referer = httpServletRequest.getHeader("referer");
-    if (referer != null)
-      debug.append(", referer=").append(referer);
-    
-    final String userAgent = httpServletRequest.getHeader(HttpHeaders.USER_AGENT);
-    if (userAgent != null)
-      debug.append(", user-agent=").append(userAgent);
-    
-    final String remoteHost = httpServletRequest.getRemoteHost();
-    if (remoteHost != null)
-      debug.append(", remoteHost=").append(remoteHost);
-    
-    final String remoteAddr = httpServletRequest.getRemoteAddr();
-    if (remoteAddr != null)
-      debug.append(", remoteAddr=").append(remoteAddr);
-    
-    final String xForwardedFor = httpServletRequest.getHeader(HttpHeaders.X_FORWARDED_FOR);
-    if (xForwardedFor != null)
-      debug.append(", ").append(HttpHeaders.X_FORWARDED_FOR).append("=").append(xForwardedFor);
-    
-    return debug.toString();
-	}
+	@OPTIONS
+  @Path("/openChannel")
+  public void openChannel_OPTIONS(
+        final @Context HttpServletRequest request, 
+        final @Context HttpServletResponse response)
+      throws Exception {
+    enableCORS(request, response);
+  }
 	
 	@GET
 	@Path("/openChannel")
 	@Produces(MediaType.TEXT_PLAIN + ";charset=utf-8")
-	public SuspendResponse<String> openChannel(
+	public SuspendResponse<String> openChannel_GET(
 	      final @Context HttpServletRequest request, 
 	      final @Context HttpServletResponse response, 
 				final @QueryParam("channelID") String channelID, 
 				final @QueryParam("outputComments") @DefaultValue("false") Boolean outputComments)
 			throws Exception {
+	  
+	  enableCORS(request, response);
 		
 		if (channelID == null || channelID.isEmpty())
 			throw new Exception("channelID must not be null or empty");
@@ -164,11 +194,24 @@ public class NotificationAPI {
 	  return suspendResponseBuilder.build();
 	}
 	
+	@OPTIONS
+  @Path("/ping")
+  public void ping_OPTIONS(
+        final @Context HttpServletRequest request, 
+        final @Context HttpServletResponse response)
+      throws Exception {
+    enableCORS(request, response);
+  }
+	
 	@GET
 	@Path("/ping")
-	public Response ping(
+	public Response ping_GET(
+  	    final @Context HttpServletRequest request, 
+        final @Context HttpServletResponse response, 
 				final @QueryParam("channelID") String channelID)
 			throws Exception {
+	  
+	  enableCORS(request, response);
 		
 		final NotificationMgr notificationMgr = NotificationMgr.getInstance();
 		
@@ -185,10 +228,34 @@ public class NotificationAPI {
 		// send ping
 		notificationMgr.sendNotification(createPingNotificationType(channelID), "ping");
 		
-		return Response.ok().build();
+		return Response.ok().cacheControl(cacheControl_cacheNever).build();
 	}
 	
-	public static String createPingNotificationType(final String channelID) {
-		return "haed.notification.ping." + channelID;
-	}
+	
+	static String debug(final HttpServletRequest httpServletRequest) {
+    
+    final StringBuilder debug = new StringBuilder();
+    
+    final String referer = httpServletRequest.getHeader("referer");
+    if (referer != null)
+      debug.append(", referer=").append(referer);
+    
+    final String userAgent = httpServletRequest.getHeader(HttpHeaders.USER_AGENT);
+    if (userAgent != null)
+      debug.append(", user-agent=").append(userAgent);
+    
+    final String remoteHost = httpServletRequest.getRemoteHost();
+    if (remoteHost != null)
+      debug.append(", remoteHost=").append(remoteHost);
+    
+    final String remoteAddr = httpServletRequest.getRemoteAddr();
+    if (remoteAddr != null)
+      debug.append(", remoteAddr=").append(remoteAddr);
+    
+    final String xForwardedFor = httpServletRequest.getHeader(HttpHeaders.X_FORWARDED_FOR);
+    if (xForwardedFor != null)
+      debug.append(", ").append(HttpHeaders.X_FORWARDED_FOR).append("=").append(xForwardedFor);
+    
+    return debug.toString();
+  }
 }

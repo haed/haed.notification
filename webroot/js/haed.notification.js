@@ -125,15 +125,17 @@ haed.notification = (function() {
                 };
               }(baseURL, channelID);
               
-              
+              var _headerName = "Expires"; 
               jQuery.atmosphere.subscribe(baseURL + "notification/v1/openChannel?channelID=" + encodeURIComponent(channelID) + "&outputComments=true", null, {
                   
                   headers: {
-                    "X-Cache-Serial": function(ajaxRequest, request, create, response) {
+                    
+                    // we have to use a simple header to be sure that CORS really works
+                    "Expires": function(ajaxRequest, request, create, response) {
                       
-                      if (response && response.headers["X-Cache-Serial"]) {
+                      if (response && response.headers["Expires"]) {
                         try {
-                          var s = parseInt(response.headers["X-Cache-Serial"], 10);
+                          var s = parseInt(response.headers["Expires"], 10);
                           if (s && s > serial) {
                             serial = s;
                           }
