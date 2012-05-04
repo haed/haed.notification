@@ -119,6 +119,12 @@ public class NotificationAPI {
 			throws Exception {
 	  
 	  enableCORS(request, response);
+	  
+	  
+	  // HOTFIX: to prevent long-polling calls to be pipe-lined
+	  // (HTTP Pipelining is used be all mobile browser and can also be activated in desktop browsers)
+	  response.setHeader("Connection", "close");
+	  
 		
 		if (channelID == null || channelID.isEmpty())
 			throw new Exception("channelID must not be null or empty");

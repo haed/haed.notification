@@ -7,7 +7,7 @@
 	<property name="srcdir" value="src/java" />
 	<property name="reldir" value="release" />
 	
-	<property name="version.num" value="0.3.2012-04-10" />
+	<property name="version.num" value="0.3.2012-05-04" />
 
 	<path id="libraries">
 		<fileset dir="${libdir}">
