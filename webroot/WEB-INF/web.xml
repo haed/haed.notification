@@ -18,12 +18,10 @@
         <param-value>haed.notification.NotificationApplication</param-value>
       </init-param>
       
-      <!--
       <init-param>
-        <param-name>org.atmosphere.cpr.broadcasterCacheClass</param-name>
-        <param-value>org.atmosphere.cache.HeaderBroadcasterCache</param-value>
+        <param-name>org.atmosphere.cpr.broadcaster.shareableThreadPool</param-name>
+        <param-value>true</param-value>
       </init-param>
-      -->
       
       <init-param>
         <param-name>org.atmosphere.cpr.broadcasterCacheClass</param-name>
