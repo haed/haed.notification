@@ -17,6 +17,7 @@ You can check out the project, it comes as a simple and small out-of-the-box app
 1. checkout, compile to /webroot/WEB-INF/classes
 2. run class WebServer: starts a web app under http://localhost:8080/app1/app1.htm
 
+
 App1 usage:
 - on page load a new channel will be created (channelID will be displayed)
 - first subscribe to a topic (app1-dependent logic), e.g.: topic1
