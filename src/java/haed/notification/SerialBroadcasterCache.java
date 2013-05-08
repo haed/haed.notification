@@ -148,12 +148,12 @@ public class SerialBroadcasterCache implements BroadcasterCache {
     return l;
   }
   
-  void cleanUp(final Long serial) {
+  void cleanUp(final long serial) {
     
     if (logger.isDebugEnabled())
       logger.debug("starting clean up serial broadcaster cache to serial " + serial);
     
-    while (head.next != null && head.serial.longValue() < serial.longValue()) {
+    while (head.next != null && head.serial < serial) {
       synchronized (this.serial) {
         cache.remove(head.serial);
         head = head.next;

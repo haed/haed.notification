@@ -1,6 +1,6 @@
 package haed.notification;
 
-import java.net.URI;
+import java.net.URL;
 import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletRequest;
@@ -41,19 +41,20 @@ public class NotificationAPI {
 	  "X-Atmosphere-Framework, X-Atmosphere-tracking-id, X-Atmosphere-Transport, X-Cache-Date, " + SerialBroadcasterCache.HEADER;
 	
 	
-	static void enableCORS(final HttpServletRequest request, final HttpServletResponse response)
+	private static String getAllowOrigin(String referer)
+	    throws Exception {
+	  
+	  if (referer == null || referer.trim().isEmpty())
+	    return "*";
+	  
+	  final URL referrerURI = new URL(referer);
+    return referrerURI.getProtocol() + "://" + referrerURI.getAuthority();
+	}
+	
+	private static void enableCORS(final HttpServletRequest request, final HttpServletResponse response)
 	    throws Exception {
     
-    String allowOrigin = "*";
-    try {
-      final String referrerHeader = request.getHeader("referer");
-      if (referrerHeader != null && referrerHeader.trim().isEmpty() == false) {
-        final URI referrerURI = new URI(referrerHeader);
-        allowOrigin = referrerURI.getScheme() + "://" + referrerURI.getAuthority();
-      }
-    } catch (final Throwable t) {
-      logger.fatal("error on checking referrer", t);
-    }
+    final String allowOrigin = getAllowOrigin(request.getHeader("referer"));
     
     response.setHeader("Access-Control-Allow-Credentials", "true");
     response.setHeader("Access-Control-Allow-Headers", headers);
@@ -168,7 +169,7 @@ public class NotificationAPI {
 		  
 		  // each channel is associated with only one client, 
 		  // we can clean up cache
-		  broadCaster.cleanUpCache(serial);
+		  broadCaster.cleanUpCache(serial.longValue());
 		}
 		
 		

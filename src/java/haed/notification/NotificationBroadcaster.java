@@ -121,7 +121,7 @@ public class NotificationBroadcaster extends JerseyBroadcaster {
 	}
 	
 	
-	void cleanUpCache(Long serial) {
+	void cleanUpCache(final long serial) {
 	  ((SerialBroadcasterCache) broadcasterCache).cleanUp(serial);
 	}
 	
