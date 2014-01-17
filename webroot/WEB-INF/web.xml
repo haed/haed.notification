@@ -12,7 +12,6 @@
     <servlet>
       <servlet-name>haed.notification</servlet-name>
       <servlet-class>org.atmosphere.cpr.AtmosphereServlet</servlet-class>
-      
       <async-supported>true</async-supported>
       
       <init-param>
@@ -44,6 +43,8 @@
           <param-name>org.atmosphere.cpr.broadcaster.maxAsyncWriteThreads</param-name>
           <param-value>10</param-value>
       </init-param>
+      
+      <load-on-startup>1</load-on-startup>
     </servlet>
     
     <servlet>

@@ -1,18 +1,20 @@
-#Idea of the notification framework: You can subscribe to one channel (per server), which can listen to many topics.
+Idea: a web client holds an open channel to a web server, subscribes to events he wants to listen and get notifications for these events.
 
 Here is some pseudo code:
 
+```javascript
 haed.notification.createChannel().done(function(channel) {
   channel.subscribe("topic1", function(message) { // topic1 notification });
   channel.subscribe("topic2", function(message) { // topic2 notification });
   // ..
 });
+```
 
 The action will be triggered by application code (not part of the notification framework), e.g. listen to a "public" topic app.systemNotification for app-wide notifications.
 
 Also the client has to use app-dependent logic to bind its channel to certain topics. This logic comes with additional app-dependent checks, like permission checks.
 
-You can check out the project, it comes as a simple and small out-of-the-box app, with a little app for testing it (app1):
+This project comes with a simple, small out-of-the-box testing app:
 
 1. checkout, compile to /webroot/WEB-INF/classes
 2. run class WebServer: starts a web app under http://localhost:8080/app1/app1.htm
