@@ -134,12 +134,8 @@ public class NotificationAPI {
     enableCORS(request, response);
   }
 	
-	
 	@GET
 	@Path("/openChannel")
-//	@Produces("application/json")
-//	@Produces(MediaType.TEXT_PLAIN + ";charset=utf-8")
-//	@Suspend
 	public SuspendResponse<String> openChannel_GET(
         final @Context HttpServletRequest request, 
         final @Context HttpServletResponse response, 
@@ -149,181 +145,45 @@ public class NotificationAPI {
 	  
 	  
 	  enableCORS(request, response);
-  
-  
-  // HOTFIX: to prevent long-polling calls to be pipe-lined
-  // (HTTP Pipelining is used be all mobile browser and can also be activated in desktop browsers)
-  response.setHeader("Connection", "close");
-  
-  
-  if (channelID == null || channelID.isEmpty())
-    throw new Exception("channelID must not be null or empty");
-  
-  final NotificationMgrImpl notificationMgr = NotificationMgrImpl.getInstance();
-  
-  Broadcaster broadCaster = notificationMgr.getBroadcaster(channelID, false);
-  if (broadCaster == null) {
     
-    if (logger.isDebugEnabled())
-      logger.debug("no channel found for id '" + channelID + "'" + debug(request));
     
-    throw new WebApplicationException(HttpStatus.NOT_FOUND_404);
+    // HOTFIX: to prevent long-polling calls to be pipe-lined
+    // (HTTP Pipelining is used be all mobile browser and can also be activated in desktop browsers)
+    response.setHeader("Connection", "close");
     
-  } else {
     
-    // check if channel is already connected
-    // => GitHub issue: https://github.com/Atmosphere/atmosphere/issues/87
-    if (broadCaster.getAtmosphereResources().isEmpty() == false) {
+    if (channelID == null || channelID.isEmpty())
+      throw new Exception("channelID must not be null or empty");
+    
+    final NotificationMgrImpl notificationMgr = NotificationMgrImpl.getInstance();
+    
+    Broadcaster broadCaster = notificationMgr.getBroadcaster(channelID, false);
+    if (broadCaster == null) {
       
-      logger.warn("channel already connected, channelID: " + channelID + debug(request));
+      if (logger.isDebugEnabled())
+        logger.debug("no channel found for id '" + channelID + "'" + debug(request));
       
-//      // avoid duplicate channel with exception
-//      throw new WebApplicationException(HttpStatus.BAD_REQUEST_400);
+      throw new WebApplicationException(HttpStatus.NOT_FOUND_404);
+      
+    } else {
+      
+      // check if channel is already connected
+      // => GitHub issue: https://github.com/Atmosphere/atmosphere/issues/87
+      if (broadCaster.getAtmosphereResources().isEmpty() == false)
+        logger.warn("channel already connected, channelID: " + channelID + debug(request));
     }
-  }
-  
-  
-//  boolean sendInitialPing = false;
-//  
-//  // initialize serial
-//  Long serial = SerialBroadcasterCache.parseSerial(request);
-//  if (serial == null || serial.longValue() == 0) {
-//    
-//    serial = broadCaster.getActualSerial();
-//    logger.info("initialize broadcaster serial to: " + serial + ", channelID: " + channelID + debug(request));
-//    
-//    sendInitialPing = true;
-//    
-//  } else {
-//    
-//    // each channel is associated with only one client, 
-//    // we can clean up cache
-//    broadCaster.cleanUpCache(serial);
-//  }
-//  
-//  
-//  // always track current serial at request/response
-//  request.setAttribute(SerialBroadcasterCache.HEADER, serial);
-//  response.setHeader(SerialBroadcasterCache.HEADER, "" + serial);
-  
-  
-//  if (sendInitialPing) {
     
-    // perform initial ping
-//    final String pingNotificationType = createPingNotificationType(channelID);
-//    notificationMgr.sendNotification(pingNotificationType, "ping");
-//  }
-  
-  
-  final SuspendResponseBuilder<String> suspendResponseBuilder = new SuspendResponse.SuspendResponseBuilder<String>()
+    final SuspendResponseBuilder<String> suspendResponseBuilder = new SuspendResponse.SuspendResponseBuilder<String>()
+      .period(1, TimeUnit.MINUTES)
+      .broadcaster(broadCaster);
     
-    .period(1, TimeUnit.MINUTES)
-//    .period(2, TimeUnit.SECONDS) // stress test setting
+    // configure and disable caching
+    suspendResponseBuilder
+      .outputComments(outputComments.booleanValue())
+      .cacheControl(cacheControl_cacheNever);
     
-    .broadcaster(broadCaster);
-  
-  // configure and disable caching
-  suspendResponseBuilder
-    .outputComments(outputComments)
-    .cacheControl(cacheControl_cacheNever);
-  
-  return suspendResponseBuilder.build();
+    return suspendResponseBuilder.build();
 	}
-	
-//	@GET
-//	@Path("/openChannel")
-//	@Produces(MediaType.TEXT_PLAIN + ";charset=utf-8")
-//	public SuspendResponse<String> openChannel_GET(
-//	      final @Context HttpServletRequest request, 
-//	      final @Context HttpServletResponse response, 
-//				final @QueryParam("channelID") String channelID, 
-//				final @QueryParam("outputComments") @DefaultValue("false") Boolean outputComments)
-//			throws Exception {
-//	  
-//	  enableCORS(request, response);
-//	  
-//	  
-//	  // HOTFIX: to prevent long-polling calls to be pipe-lined
-//	  // (HTTP Pipelining is used be all mobile browser and can also be activated in desktop browsers)
-//	  response.setHeader("Connection", "close");
-//	  
-//		
-//		if (channelID == null || channelID.isEmpty())
-//			throw new Exception("channelID must not be null or empty");
-//		
-//		BroadcasterFactory.getDefault().l
-//		
-//		final NotificationMgr notificationMgr = NotificationMgr.getInstance();
-//		
-//		NotificationBroadcaster broadCaster = notificationMgr.getBroadcaster(channelID, false);
-//		if (broadCaster == null) {
-//			
-//			if (logger.isDebugEnabled())
-//				logger.debug("no channel found for id '" + channelID + "'" + debug(request));
-//			
-//			throw new WebApplicationException(HttpStatus.NOT_FOUND_404);
-//	    
-//		} else {
-//			
-//			// check if channel is already connected
-//			// => GitHub issue: https://github.com/Atmosphere/atmosphere/issues/87
-//			if (broadCaster.getAtmosphereResources().isEmpty() == false) {
-//				
-//			  logger.warn("channel already connected, channelID: " + channelID + debug(request));
-//				
-////				// avoid duplicate channel with exception
-////				throw new WebApplicationException(HttpStatus.BAD_REQUEST_400);
-//			}
-//		}
-//		
-//		
-//		boolean sendInitialPing = false;
-//		
-//		// initialize serial
-//		Long serial = SerialBroadcasterCache.parseSerial(request);
-//		if (serial == null || serial.longValue() == 0) {
-//		  
-//		  serial = broadCaster.getActualSerial();
-//		  logger.info("initialize broadcaster serial to: " + serial + ", channelID: " + channelID + debug(request));
-//		  
-//		  sendInitialPing = true;
-//		  
-//		} else {
-//		  
-//		  // each channel is associated with only one client, 
-//		  // we can clean up cache
-//		  broadCaster.cleanUpCache(serial);
-//		}
-//		
-//		
-//	  // always track current serial at request/response
-//    request.setAttribute(SerialBroadcasterCache.HEADER, serial);
-//    response.setHeader(SerialBroadcasterCache.HEADER, "" + serial);
-//		
-//		
-//		if (sendInitialPing) {
-//		  
-//		  // perform initial ping
-//      final String pingNotificationType = createPingNotificationType(channelID);
-//      notificationMgr.sendNotification(pingNotificationType, "ping");
-//		}
-//		
-//		
-//		final SuspendResponseBuilder<String> suspendResponseBuilder = new SuspendResponse.SuspendResponseBuilder<String>()
-//		
-//			.period(1, TimeUnit.MINUTES)
-////		  .period(2, TimeUnit.SECONDS) // stress test setting
-//			
-//			.broadcaster(broadCaster);
-//		
-//		// configure and disable caching
-//		suspendResponseBuilder
-//			.outputComments(outputComments)
-//			.cacheControl(cacheControl_cacheNever);
-//		
-//	  return suspendResponseBuilder.build();
-//	}
-	
 	
 	
 	@OPTIONS
@@ -383,10 +243,6 @@ public class NotificationAPI {
     final String remoteAddr = httpServletRequest.getRemoteAddr();
     if (remoteAddr != null)
       debug.append(", remoteAddr=").append(remoteAddr);
-    
-//    final String xForwardedFor = httpServletRequest.getHeader(HttpHeaders.X_FORWARDED_FOR);
-//    if (xForwardedFor != null)
-//      debug.append(", ").append(HttpHeaders.X_FORWARDED_FOR).append("=").append(xForwardedFor);
     
     return debug.toString();
   }
