@@ -1,14 +1,14 @@
 Idea: a web client holds an open channel to a web server, subscribes to events he wants to listen and get notifications for these events.
 
-Here is some pseudo code:
+Example (pseudo code):
 
-```javascript
+avascript
 haed.notification.createChannel().done(function(channel) {
   channel.subscribe("topic1", function(message) { // topic1 notification });
   channel.subscribe("topic2", function(message) { // topic2 notification });
   // ..
 });
-```
+
 
 The action will be triggered by application code (not part of the notification framework), e.g. listen to a "public" topic app.systemNotification for app-wide notifications.
 
