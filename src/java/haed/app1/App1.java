@@ -1,6 +1,6 @@
 package haed.app1;
 
-import haed.notification.NotificationMgr;
+import haed.notification.NotificationMgrImpl;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -19,7 +19,7 @@ public class App1 {
 				final @QueryParam("channelID") String channelID, 
 				final @QueryParam("topic") String topic)
 			throws Exception {
-		NotificationMgr.getInstance().subscribe(channelID, topic);
+		NotificationMgrImpl.getInstance().subscribe(channelID, topic);
 		return Response.ok().build();
 	}
 	
@@ -30,7 +30,7 @@ public class App1 {
 				final @QueryParam("topic") String topic, 
 				final @QueryParam("message") String message)
 			throws Exception {
-		NotificationMgr.getInstance().sendNotification(topic, message);
+	  NotificationMgrImpl.getInstance().sendNotification(topic, message);
 		return Response.ok().build();
 	}
 }

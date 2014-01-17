@@ -1,16 +1,13 @@
-/* jslint instructions */
 /*global haed, jQuery, window*/
-
-"use strict";
-
 
 if (window.haed === undefined) {
   window.haed = {};
 }
 
-
 haed.notification = (function() {
-  
+
+  "use strict";
+
   // baseURL -> <channelID, { deferred, id, subscriptions }>
   var channels = {};
   
@@ -67,7 +64,7 @@ haed.notification = (function() {
      * @option {string} (optional) baseURL
      * @option {string} channelID
      */
-    getChannel: function(parameters) {
+    getChannel: (function(parameters) {
       
       return function(parameters) {
         
@@ -78,11 +75,11 @@ haed.notification = (function() {
         if (channels[baseURL][channelID] === undefined) {
           
           channels[baseURL][channelID] = { deferred: new jQuery.Deferred() };
-          channels[baseURL][channelID].channel = function(baseURL, channelID) {
+          channels[baseURL][channelID].channel = (function(baseURL, channelID) {
               
               var serial = null;
               
-              var callback = function(baseURL, channelID) {
+              var callback = (function(baseURL, channelID) {
                 
                 var lastResponseBody = "";
                 var stream = "";
@@ -96,7 +93,7 @@ haed.notification = (function() {
   
                     var idx = stream.indexOf(":");
                     while (idx > -1) {
-                      var l = parseInt(stream.substring(0, idx));
+                      var l = parseInt(stream.substring(0, idx), 10);
                       if (stream.length > (l + idx)) {
                         
                         // parse notification
@@ -123,70 +120,51 @@ haed.notification = (function() {
                     }
                   }
                 };
-              }(baseURL, channelID);
-              
-              var _headerName = "Expires"; 
-              jQuery.atmosphere.subscribe(baseURL + "notification/v1/openChannel?channelID=" + encodeURIComponent(channelID) + "&outputComments=true", null, {
-                  
-                  headers: {
-                    
-                    // we have to use a simple header to be sure that CORS really works
-                    "Expires": function(ajaxRequest, request, create, response) {
-                      
-                      if (response && response.headers["Expires"]) {
-                        try {
-                          var s = parseInt(response.headers["Expires"], 10);
-                          if (s && s > serial) {
-                            serial = s;
-                          }
-                        } catch (error) { }
-                      }
-                      
-                      return serial;
-                    }
-                  }, 
-                  
-                  
-                  // some stress test settings
-                  timeout: 1000 * 60 * 60, // 1 hour, server timeout must be lower
-//                  timeout: 1000 * 1, // stress test: 1sec
-//                  suspend: false, 
-                  
-                  callback: callback, 
-                    
-                    // TODO @haed [haed]: does not work properly, too much atmosphere issues (critical issue: https://github.com/Atmosphere/atmosphere/issues/87)
-                  transport: 'long-polling', 
-                  fallbackTransport: 'long-polling', 
-                  
-                  
-                    // TODO @haed [haed]: check: ie does not support streaming, also fallback will be ignored ...
-                    // TODO @haed [haed]: streaming over vodafone stick usb does not work (lost some packages)
-                    // TODO @haed [haed]: streaming does not re-connect after server side suspend
-//                    transport: 'streaming', 
-//                    fallbackTransport: 'long-polling', 
-                    
-//                    transport: 'websocket', 
-//                    fallbackTransport: 'long-polling', 
-                    
-                    
-                    contentType: 'text/plain;charset=utf-8', 
-                    maxRequest: Math.pow(2, 53)
-                });
+              })(baseURL, channelID);
               
               
               var pingDeferred = null;
               var keepPinging = null;
+              
+              var request = {
+                url: baseURL + "notification/v1/openChannel?channelID=" + encodeURIComponent(channelID),
+                
+//                timeout: 1000 * 60 * 60, // 1 hour, server timeout must be lower
+//                timeout: 1000 * 1, // stress test: 1sec
+//              suspend: false,
+                
+                onOpen: function(response) {
+                  channels[baseURL][channelID].deferred.resolve(channels[baseURL][channelID].channel);
+                },
+                onMessage: callback,
+                onError: function(response) {
+                  // TODO: implement, fires e.g. if server disconnects
+                },
+                
+                transport: 'websocket',
+//                transport: 'long-polling',
+                
+                fallbackTransport: 'long-polling',
+                
+//                contentType : "application/json",
+//                logLevel : 'debug',
+                
+//                contentType: 'text/plain;charset=utf-8',
+                maxRequest: Math.pow(2, 53)
+              };
+              
+              jQuery.atmosphere.subscribe(request);
               
               
               var instance = {
                 
                 getBaseURL: function() {
                   return baseURL;
-                }, 
+                },
                 
                 getID: function() {
                   return channelID;
-                }, 
+                },
                 
                 keepPinging: function() {
                   
@@ -221,7 +199,7 @@ haed.notification = (function() {
                     
                     var next = function(timeout) {
                         timeout = timeout || 60000; // initialize timeout to one minute
-                        setTimeout(function(baseURL, channelID, keepPinging) {
+                        setTimeout((function(baseURL, channelID, keepPinging) {
                           return function() {
                               haed.notification.getChannel({ baseURL: baseURL, channelID: channelID })
                                 .done(function(channel) {
@@ -236,14 +214,14 @@ haed.notification = (function() {
                                         });
                                   });
                             };
-                          }(baseURL, channelID, keepPinging), timeout);
+                          }(baseURL, channelID, keepPinging)), timeout);
                       };
                     
                     next(50);
                   }
                   
                   return keepPinging;
-                }, 
+                },
                 
                 ping: function() {
                   
@@ -274,13 +252,14 @@ haed.notification = (function() {
                         }
                       });
                   
-                  setTimeout(function(pingDeferred) {
-                    return function() {
-                      if (pingDeferred) {
-                        pingDeferred.reject("noPing");
-                      }
-                    };
-                  }(pingDeferred), 120000); // 2 minutes
+                  setTimeout(
+                    (function(pingDeferred) {
+                      return function() {
+                        if (pingDeferred) {
+                          pingDeferred.reject("noPing");
+                        }
+                      };
+                    }(pingDeferred)), 120000); // 2 minutes
                   
                   return pingDeferred.promise();
                 }, 
@@ -302,21 +281,21 @@ haed.notification = (function() {
               // per default subscribe to ping (core notification api)
               instance.subscribe("haed.notification.ping." + channelID, function() {
                   
-                  channels[baseURL][channelID].deferred.resolve(channels[baseURL][channelID].channel);
+//                  channels[baseURL][channelID].deferred.resolve(channels[baseURL][channelID].channel);
                   
                   if (pingDeferred) {
                     pingDeferred.resolve();
-                  };
+                  }
                 });
               
               return instance;
               
-            }(baseURL, channelID);
+            }(baseURL, channelID));
         }
         
         return channels[baseURL][channelID].deferred.promise();
       };
-    }(), 
+    }()),
     
     getDefaultChannel: function(baseURL) {
       

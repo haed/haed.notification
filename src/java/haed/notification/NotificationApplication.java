@@ -7,14 +7,14 @@ import javax.ws.rs.core.Application;
 
 public class NotificationApplication extends Application {
 	
-	private final Set<Object> singletons = new HashSet<Object>();
-
+	private final Set<Object> singletons = new HashSet<>();
+	
 	public NotificationApplication() {
-		singletons.add(new NotificationAPI());
+		this.singletons.add(new NotificationAPI());
 	}
 	
 	@Override
 	public Set<Object> getSingletons() {
-	  return singletons;
+	  return this.singletons;
   }
 }
