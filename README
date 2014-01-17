@@ -2,7 +2,6 @@ Idea: a web client holds an open channel to a web server, subscribes to events h
 
 Example (pseudo code):
 
-avascript
 haed.notification.createChannel().done(function(channel) {
   channel.subscribe("topic1", function(message) { // topic1 notification });
   channel.subscribe("topic2", function(message) { // topic2 notification });
