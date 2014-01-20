@@ -6,10 +6,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
-import org.atmosphere.cpr.Broadcaster;
+import org.atmosphere.cache.UUIDBroadcasterCache;
+import org.atmosphere.cpr.BroadcasterCache;
 import org.atmosphere.cpr.BroadcasterFactory;
 import org.atmosphere.cpr.BroadcasterLifeCyclePolicy;
 import org.atmosphere.cpr.BroadcasterLifeCyclePolicyListener;
@@ -55,15 +55,10 @@ public class NotificationMgrImpl implements NotificationMgr {
 	
 	private final Map<String, Set<String>> subscriptions = new ConcurrentHashMap<>();
 	
-	private final AtomicLong notificationID = new AtomicLong(1);
+	private final BroadcasterCache broadcasterCache = new UUIDBroadcasterCache();
 	
 	
 	private NotificationMgrImpl() {
-	}
-	
-	
-	private long createNotificationID() {
-	  return notificationID.incrementAndGet();
 	}
 	
 	protected NotificationBroadcaster getBroadcaster(final String channelID, final boolean createIfNull) {
@@ -73,6 +68,8 @@ public class NotificationMgrImpl implements NotificationMgr {
 			
 			// instantiate new broadcaster
 			broadCaster = BroadcasterFactory.getDefault().lookup(NotificationBroadcaster.class, channelID, true);
+			
+			broadCaster.getBroadcasterConfig().setBroadcasterCache(this.broadcasterCache);
 			
 			// set life policy explicitly
 			broadCaster.setBroadcasterLifeCyclePolicy(broadcasterLifeCyclePolicy);
@@ -186,39 +183,37 @@ public class NotificationMgrImpl implements NotificationMgr {
 	public void sendNotification(final String notificationType, final Object source)
 			throws Exception {
 		
-		final Set<String> channelIDs = subscriptions.get(notificationType);
+		final Set<String> channelIDs = this.subscriptions.get(notificationType);
 		if (channelIDs == null || channelIDs.isEmpty())
 			return;
 		
-		final Gson gson =  this.gsonBuilder.create();
-		
-		// build up notification
-		final long currentNotificationID = createNotificationID();
+		final Gson gson = this.gsonBuilder.create();
 		
 		// TODO: source should be object (not compatible with some clients outside)
-		final String sourceJSON = gson.toJson(source);
-		
-		final NotificationCtnr notificationCtnr = new NotificationCtnr(currentNotificationID, notificationType, sourceJSON);
-		
-		String message = gson.toJson(notificationCtnr);
-  	message = message.length() + ":" + message;
-		
+    final String sourceJSON = gson.toJson(source);
+    
 		synchronized (channelIDs) {
 			
 			for (final String channelID: channelIDs) {
 			  
-				final Broadcaster broadcaster = getBroadcaster(channelID, false);
+				final NotificationBroadcaster broadcaster = getBroadcaster(channelID, false);
 				if (broadcaster == null) {
 					
 					// broadcaster does not exists anymore
-					logger.warn("no broadcaster found, channelID: " + channelID + ", notificationType: " + notificationType + ", notificationCtnr: " + notificationCtnr);
+					logger.warn("no broadcaster found, channelID: " + channelID + ", notificationType: " + notificationType);
 					
 					// ignore
 					continue;
 				}
-					
+				
+				final long id = broadcaster.incrementAndGetID();
+				final NotificationCtnr notificationCtnr = new NotificationCtnr(id, notificationType, sourceJSON);
+		    
+		    String message = gson.toJson(notificationCtnr);
+		    message = message.length() + ":" + message;
+			  
 				if (logger.isDebugEnabled())
-					logger.debug("send notification, channelID: " + channelID + ", notificationID: " + currentNotificationID + ", notificationCtnr: " + notificationCtnr);
+					logger.debug("send notification, channelID: " + channelID + ", id: " + id + ", notificationCtnr: " + notificationCtnr);
 				
 				// send directly
 				broadcaster.broadcast(message);

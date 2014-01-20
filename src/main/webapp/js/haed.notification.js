@@ -143,8 +143,8 @@ haed.notification = (function() {
                   console.log(response);
                 },
                 
-//                transport: 'websocket',
-                transport: 'long-polling',
+                transport: 'websocket',
+//                transport: 'long-polling',
                 fallbackTransport: 'long-polling',
                 
                 maxRequest: Math.pow(2, 53)
