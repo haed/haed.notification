@@ -139,17 +139,14 @@ haed.notification = (function() {
                 onMessage: callback,
                 onError: function(response) {
                   // TODO: implement, fires e.g. if server disconnects
+                  console.log("error:");
+                  console.log(response);
                 },
                 
-                transport: 'websocket',
-//                transport: 'long-polling',
-                
+//                transport: 'websocket',
+                transport: 'long-polling',
                 fallbackTransport: 'long-polling',
                 
-//                contentType : "application/json",
-//                logLevel : 'debug',
-                
-//                contentType: 'text/plain;charset=utf-8',
                 maxRequest: Math.pow(2, 53)
               };
               

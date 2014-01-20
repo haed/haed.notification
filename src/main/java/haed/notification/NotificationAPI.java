@@ -23,7 +23,6 @@ import org.apache.log4j.Logger;
 import org.atmosphere.cpr.Broadcaster;
 import org.atmosphere.jersey.SuspendResponse;
 import org.atmosphere.jersey.SuspendResponse.SuspendResponseBuilder;
-import org.eclipse.jetty.http.HttpStatus;
 
 @Path("/")
 public class NotificationAPI {
@@ -163,7 +162,7 @@ public class NotificationAPI {
       if (logger.isDebugEnabled())
         logger.debug("no channel found for id '" + channelID + "'" + debug(request));
       
-      throw new WebApplicationException(HttpStatus.NOT_FOUND_404);
+      throw new WebApplicationException(404);
       
     } else {
       
@@ -174,7 +173,7 @@ public class NotificationAPI {
     }
     
     final SuspendResponseBuilder<String> suspendResponseBuilder = new SuspendResponse.SuspendResponseBuilder<String>()
-      .period(1, TimeUnit.MINUTES)
+      .period(2, TimeUnit.MINUTES)
       .broadcaster(broadCaster);
     
     // configure and disable caching
@@ -214,7 +213,7 @@ public class NotificationAPI {
 			if (logger.isDebugEnabled())
 				logger.debug("no channel found for id '" + channelID + "'");
 			
-			throw new WebApplicationException(HttpStatus.NOT_FOUND_404);
+			throw new WebApplicationException(404);
 		}
 		
 		// send ping

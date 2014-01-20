@@ -1,5 +1,7 @@
 package haed.notification;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -11,7 +13,6 @@ import org.atmosphere.cpr.Broadcaster;
 import org.atmosphere.cpr.BroadcasterFactory;
 import org.atmosphere.cpr.BroadcasterLifeCyclePolicy;
 import org.atmosphere.cpr.BroadcasterLifeCyclePolicyListener;
-import org.eclipse.jetty.util.ConcurrentHashSet;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -130,7 +131,7 @@ public class NotificationMgrImpl implements NotificationMgr {
 				synchronized (subscriptions) {
 				  channelIDs = subscriptions.get(notificationType);
 					if (channelIDs == null) {
-					  channelIDs = new ConcurrentHashSet<>();
+					  channelIDs = Collections.synchronizedSet(new HashSet<String>());
 						subscriptions.put(notificationType, channelIDs);
 					}
 	      }
