@@ -180,18 +180,15 @@ public class NotificationMgrImpl implements NotificationMgr {
 	}
 	
 	@Override
-	public void sendNotification(final String notificationType, final Object source)
+	public void sendNotification(final String topic, final Object payload)
 			throws Exception {
 		
-		final Set<String> channelIDs = this.subscriptions.get(notificationType);
+		final Set<String> channelIDs = this.subscriptions.get(topic);
 		if (channelIDs == null || channelIDs.isEmpty())
 			return;
 		
 		final Gson gson = this.gsonBuilder.create();
 		
-		// TODO: source should be object (not compatible with some clients outside)
-    final String sourceJSON = gson.toJson(source);
-    
 		synchronized (channelIDs) {
 			
 			for (final String channelID: channelIDs) {
@@ -200,20 +197,20 @@ public class NotificationMgrImpl implements NotificationMgr {
 				if (broadcaster == null) {
 					
 					// broadcaster does not exists anymore
-					logger.warn("no broadcaster found, channelID: " + channelID + ", notificationType: " + notificationType);
+					logger.warn("no broadcaster found, channelID: " + channelID + ", topic: " + topic);
 					
 					// ignore
 					continue;
 				}
 				
 				final long id = broadcaster.incrementAndGetID();
-				final NotificationCtnr notificationCtnr = new NotificationCtnr(id, notificationType, sourceJSON);
+				final NotificationCtnr notificationCtnr = new NotificationCtnr(id, topic, payload);
 		    
 		    String message = gson.toJson(notificationCtnr);
 		    message = message.length() + ":" + message;
 			  
 				if (logger.isDebugEnabled())
-					logger.debug("send notification, channelID: " + channelID + ", id: " + id + ", notificationCtnr: " + notificationCtnr);
+					logger.debug("send notification, channelID: " + channelID + ", id: " + id + ", ctnr: " + notificationCtnr);
 				
 				// send directly
 				broadcaster.broadcast(message);
