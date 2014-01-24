@@ -1,15 +1,16 @@
 package haed.notification;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
-import org.atmosphere.cache.UUIDBroadcasterCache;
-import org.atmosphere.cpr.BroadcasterCache;
+import org.atmosphere.cpr.Broadcaster;
 import org.atmosphere.cpr.BroadcasterFactory;
 import org.atmosphere.cpr.BroadcasterLifeCyclePolicy;
 import org.atmosphere.cpr.BroadcasterLifeCyclePolicyListener;
@@ -53,29 +54,44 @@ public class NotificationMgrImpl implements NotificationMgr {
 	
 	private GsonBuilder gsonBuilder = new GsonBuilder();
 	
-	private final Map<String, Set<String>> subscriptions = new ConcurrentHashMap<>();
+	private final Map<String, Set<String>> topicsByChannel = new ConcurrentHashMap<>();
+	private final Map<String, Set<String>> channelsByTopic = new ConcurrentHashMap<>();
 	
-	private final BroadcasterCache broadcasterCache = new UUIDBroadcasterCache();
+	private final Map<String, AtomicLong> notificationIDsByChannel = new ConcurrentHashMap<>();
+	
+//	private final BroadcasterCache broadcasterCache = new UUIDBroadcasterCache();
 	
 	
 	private NotificationMgrImpl() {
 	}
 	
-	protected NotificationBroadcaster getBroadcaster(final String channelID, final boolean createIfNull) {
+	
+//	private Set<String> getTopics(final String channelID) {
+//	  return ;
+//	}
+	
+	public long incrementAndGetNotificationID(final String channelID) {
+    return this.notificationIDsByChannel.get(channelID).incrementAndGet();
+  }
+	
+	protected Broadcaster getBroadcaster(final String channelID, final boolean createIfNull) {
 		
-	  NotificationBroadcaster broadCaster = BroadcasterFactory.getDefault().lookup(NotificationBroadcaster.class, channelID, false);
+	  Broadcaster broadCaster = BroadcasterFactory.getDefault().lookup(channelID, false);
 		if (broadCaster == null && createIfNull) {
 			
 			// instantiate new broadcaster
-			broadCaster = BroadcasterFactory.getDefault().lookup(NotificationBroadcaster.class, channelID, true);
+			broadCaster = BroadcasterFactory.getDefault().lookup(channelID, true);
 			
-			broadCaster.getBroadcasterConfig().setBroadcasterCache(this.broadcasterCache);
+			this.notificationIDsByChannel.put(channelID, new AtomicLong(0));
+			this.topicsByChannel.put(channelID, Collections.synchronizedSet(new HashSet<String>()));
+			
+//			broadCaster.getBroadcasterConfig().setBroadcasterCache(this.broadcasterCache);
 			
 			// set life policy explicitly
 			broadCaster.setBroadcasterLifeCyclePolicy(broadcasterLifeCyclePolicy);
 			
 			// listen to destroy
-			final NotificationBroadcaster _broadCaster = broadCaster;
+//			final NotificationBroadcaster _broadCaster = broadCaster;
 			broadCaster.addBroadcasterLifeCyclePolicyListener(new BroadcasterLifeCyclePolicyListener() {
   			    
   			    @Override
@@ -90,13 +106,20 @@ public class NotificationMgrImpl implements NotificationMgr {
   						if (logger.isDebugEnabled())
   							logger.debug("destroy channel '" + channelID + "'");
   						
-  						for (final String notificationType: _broadCaster.getSubscribedNotificationTypes()) {
-  							try {
-  								NotificationMgrImpl.this.unsubscribeInternal(channelID, notificationType);
-  							} catch (final Exception e) {
-  								logger.fatal("error on unsubscribe (on destroy), channelID: " + channelID + ", notificationType: " + notificationType);
-  							}
+  						final Collection<String> c = topicsByChannel.remove(channelID);
+  						if (c != null) {
+  						  
+  						  for (final String topic: c)
+  						    unsubscribeInternal(channelID, topic);
   						}
+  						
+//  						for (final String notificationType: _broadCaster.getSubscribedNotificationTypes()) {
+//  							try {
+//  								NotificationMgrImpl.this.unsubscribeInternal(channelID, notificationType);
+//  							} catch (final Exception e) {
+//  								logger.fatal("error on unsubscribe (on destroy), channelID: " + channelID + ", notificationType: " + notificationType);
+//  							}
+//  						}
   					}
   				});
 		}
@@ -110,26 +133,28 @@ public class NotificationMgrImpl implements NotificationMgr {
 	}
 	
 	@Override
-	public void subscribe(final String channelID, final String notificationType)
+	public void subscribe(final String channelID, final String topic)
 			throws Exception {
 		
-		final NotificationBroadcaster broadcaster = getBroadcaster(channelID, false);
-		if (broadcaster == null)
-			throw new Exception("no broadcaster found, channelID: " + channelID);
+//		final Broadcaster broadcaster = getBroadcaster(channelID, false);
+//		if (broadcaster == null)
+//			throw new Exception("no broadcaster found, channelID: " + channelID);
 		
-		if (broadcaster.addSubscription(notificationType)) {
+		if (this.topicsByChannel.get(channelID).add(topic)) {
 			
 			if (logger.isDebugEnabled())
-				logger.debug("channel '" + channelID + "' subscribes to notification type '" + notificationType + "'");
-		
-			// register channel for notification type
-			Set<String> channelIDs = subscriptions.get(notificationType);
+				logger.debug("channel '" + channelID + "' subscribes to topic '" + topic + "'");
+			
+			Set<String> channelIDs = this.channelsByTopic.get(topic);
 			if (channelIDs == null) {
-				synchronized (subscriptions) {
-				  channelIDs = subscriptions.get(notificationType);
+			  
+				synchronized (this.channelsByTopic) {
+				  
+				  channelIDs = this.channelsByTopic.get(topic);
 					if (channelIDs == null) {
+					  
 					  channelIDs = Collections.synchronizedSet(new HashSet<String>());
-						subscriptions.put(notificationType, channelIDs);
+						this.channelsByTopic.put(topic, channelIDs);
 					}
 	      }
 			}
@@ -138,22 +163,21 @@ public class NotificationMgrImpl implements NotificationMgr {
 		}
 	}
 	
-	public void unsubscribe(final String channelID, final String notificationType)
+	public void unsubscribe(final String channelID, final String topic)
 			throws Exception {
 		
-		final NotificationBroadcaster broadcaster = getBroadcaster(channelID, false);
-		if (broadcaster == null)
-			throw new Exception("no broadcaster found, channelID: " + channelID);
+//		final NotificationBroadcaster broadcaster = getBroadcaster(channelID, false);
+//		if (broadcaster == null)
+//			throw new Exception("no broadcaster found, channelID: " + channelID);
 		
-		if (broadcaster.removeSubscription(notificationType))
-			unsubscribeInternal(channelID, notificationType);
+		if (this.topicsByChannel.get(channelID).remove(topic))
+			unsubscribeInternal(channelID, topic);
 	}
 	
-	protected void unsubscribeInternal(final String channelID, final String notificationType)
-			throws Exception {
+	private void unsubscribeInternal(final String channelID, final String topic) {
 		
 		// register channel for notification type
-		Set<String> channelIDs = this.subscriptions.get(notificationType);
+		Set<String> channelIDs = this.channelsByTopic.get(topic);
 		if (channelIDs == null)
 			return;
 		
@@ -166,24 +190,24 @@ public class NotificationMgrImpl implements NotificationMgr {
 			if (channelIDs.isEmpty()) {
 				
 				// channelIDs is empty, maybe we can remove container
-				synchronized (subscriptions) {
+				synchronized (channelsByTopic) {
 				  
-				  channelIDs = subscriptions.get(notificationType);
-					if (channelIDs != null && channelIDs.isEmpty())
-						subscriptions.remove(notificationType);
+				  channelIDs = channelsByTopic.get(topic);
+				  if (channelIDs != null && channelIDs.isEmpty())
+						channelsByTopic.remove(topic);
 				}
 			}
 		}
 		
 		if (logger.isDebugEnabled())
-			logger.debug("" + channelIDs.size() + " subscriptions left for notification with type '" + notificationType + "'");
+			logger.debug("" + channelIDs.size() + " subscriptions left for notification with type '" + topic + "'");
 	}
 	
 	@Override
 	public void sendNotification(final String topic, final Object payload)
 			throws Exception {
 		
-		final Set<String> channelIDs = this.subscriptions.get(topic);
+		final Set<String> channelIDs = this.channelsByTopic.get(topic);
 		if (channelIDs == null || channelIDs.isEmpty())
 			return;
 		
@@ -193,7 +217,7 @@ public class NotificationMgrImpl implements NotificationMgr {
 			
 			for (final String channelID: channelIDs) {
 			  
-				final NotificationBroadcaster broadcaster = getBroadcaster(channelID, false);
+				final Broadcaster broadcaster = getBroadcaster(channelID, false);
 				if (broadcaster == null) {
 					
 					// broadcaster does not exists anymore
@@ -203,7 +227,7 @@ public class NotificationMgrImpl implements NotificationMgr {
 					continue;
 				}
 				
-				final long id = broadcaster.incrementAndGetID();
+				final long id = incrementAndGetNotificationID(channelID);
 				final NotificationCtnr notificationCtnr = new NotificationCtnr(id, topic, payload);
 		    
 		    String message = gson.toJson(notificationCtnr);

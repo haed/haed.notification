@@ -1,6 +1,6 @@
 
-var app1 = {};
-app1.ChannelWidget = function() {
+var app = {};
+app.ChannelWidget = function() {
   
   return function() {
     
@@ -109,7 +109,6 @@ app1.ChannelWidget = function() {
     
     
     return {
-      
     };
   };
 }();
