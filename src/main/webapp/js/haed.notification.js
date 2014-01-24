@@ -2,7 +2,7 @@
 
   'use strict';
 
-  var DEBUG = true;
+  var DEBUG = false;
 
   // polyfill for bind, from: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/bind
   if (!Function.prototype.bind) {
