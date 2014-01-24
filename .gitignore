@@ -1,6 +1,8 @@
 /bin
 /release
 /.classpath
+/.idea
 /.project
 /.settings
 /target
+*.iml

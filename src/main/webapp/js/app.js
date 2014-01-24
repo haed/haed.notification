@@ -4,7 +4,7 @@ app.ChannelWidget = function() {
   
   return function() {
     
-    var channel, channelDiv;
+    var notificationCenter, channelDiv;
     
     channelDiv = jQuery("<div class='channel-widget' />")
       .append(jQuery("<div class='channel-id' />"))
@@ -67,36 +67,36 @@ app.ChannelWidget = function() {
     channelDiv.find(".resetCount").click(resetCount);
 
     channelDiv.find(".ping").click(function() {
-        channel.ping()
-          .done(function() {
-              alert("ping was successful")
-            })
+        notificationCenter.getPingHandler().sendPing()
+          .done(function(millis) {
+            alert("ping was successful, after " + millis + "ms");
+          })
           .fail(function(error) {
-              alert("ping failed: " + error)
-            });
+            alert("ping failed: " + (error && (error.errorID + ' - ' + error.message)));
+          });
       });
     
     // initializes the channel new channel (got new channelID from server)
-    haed.notification.createChannel()
-      .done(function(_channel) {
+    notificationCenter = new haed.notification.NotificationCenter();
+    notificationCenter.getOrCreateChannel()
+      .done(function(channel) {
           
-          channel = _channel;
-          channelDiv.find(".channel-id").html(channel.getID());
+          channelDiv.find(".channel-id").html(channel.channelID);
           
           channelDiv.find(".subscribe").click(function() {
               var topic = channelDiv.find(".topic").val();
               jQuery.ajax("/haed.app1/subscribe", {
                     type: "GET", 
                     data: {
-                      channelID: channel.getID(), 
+                      channelID: channel.channelID,
                       topic: topic
                     }
                   })
                 .done(function() {
-                    channel.subscribe(topic, function(message) {
+                    notificationCenter.onMessage(function(message) {
                       println("received: " + message);
                       incCount(1);
-                    });
+                    }, topic);
                     println("subscribed to: " + topic);
                   });
             });
