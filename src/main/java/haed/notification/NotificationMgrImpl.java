@@ -54,23 +54,17 @@ public class NotificationMgrImpl implements NotificationMgr {
 	
 	private GsonBuilder gsonBuilder = new GsonBuilder();
 	
+	private ChannelAdapter channelAdapter = new UUIDChannelAdapter();
+	
 	private final Map<String, Set<String>> topicsByChannel = new ConcurrentHashMap<>();
 	private final Map<String, Set<String>> channelsByTopic = new ConcurrentHashMap<>();
-	
 	private final Map<String, AtomicLong> notificationIDsByChannel = new ConcurrentHashMap<>();
-	
-//	private final BroadcasterCache broadcasterCache = new UUIDBroadcasterCache();
-	
 	
 	private NotificationMgrImpl() {
 	}
 	
 	
-//	private Set<String> getTopics(final String channelID) {
-//	  return ;
-//	}
-	
-	public long incrementAndGetNotificationID(final String channelID) {
+	private long incrementAndGetNotificationID(final String channelID) {
     return this.notificationIDsByChannel.get(channelID).incrementAndGet();
   }
 	
@@ -201,6 +195,17 @@ public class NotificationMgrImpl implements NotificationMgr {
 		
 		if (logger.isDebugEnabled())
 			logger.debug("" + channelIDs.size() + " subscriptions left for notification with type '" + topic + "'");
+	}
+	
+	
+	@Override
+	public void setChannelAdapter(final ChannelAdapter channelAdapter) {
+    this.channelAdapter = channelAdapter;
+  }
+	
+	@Override
+	public ChannelAdapter getChannelAdapter() {
+	  return this.channelAdapter;
 	}
 	
 	@Override

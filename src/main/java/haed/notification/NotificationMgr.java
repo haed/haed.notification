@@ -6,6 +6,11 @@ public interface NotificationMgr {
   
   void setGsonBuilder(GsonBuilder gsonBuilder);
   
+  void setChannelAdapter(ChannelAdapter channelAdapter);
+  
+  
+  ChannelAdapter getChannelAdapter();
+  
   void sendNotification(String notificationType, Object source)
       throws Exception;
   

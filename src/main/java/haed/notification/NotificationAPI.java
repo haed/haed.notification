@@ -1,7 +1,6 @@
 package haed.notification;
 
 import java.net.URI;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletRequest;
@@ -23,6 +22,8 @@ import org.apache.log4j.Logger;
 import org.atmosphere.cpr.Broadcaster;
 import org.atmosphere.jersey.SuspendResponse;
 import org.atmosphere.jersey.SuspendResponse.SuspendResponseBuilder;
+
+import com.sun.jersey.api.core.HttpContext;
 
 @Path("/")
 public class NotificationAPI {
@@ -105,15 +106,16 @@ public class NotificationAPI {
 	@Path("/createChannel")
 	@Produces(MediaType.TEXT_PLAIN + ";charset=utf-8")
 	public Response createChannel_GET(
-	      final @Context HttpServletRequest request, 
+	      final @Context HttpContext httpContext,
+	      final @Context HttpServletRequest request,
 	      final @Context HttpServletResponse response)
 			throws Exception {
 	  
 	  enableCORS(request, response);
+	  
+	  final NotificationMgrImpl notificationMgr = NotificationMgrImpl.getInstance();
 		
-		final String channelID = UUID.randomUUID().toString();
-		
-		final NotificationMgrImpl notificationMgr = NotificationMgrImpl.getInstance();
+		final String channelID = notificationMgr.getChannelAdapter().getChannelID(httpContext);
 		notificationMgr.getBroadcaster(channelID, true);
 		
 		// also register for ping and ping initial
