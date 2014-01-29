@@ -87,15 +87,15 @@
 
   /**
    * @param baseURL
-   * @param apiPath
    * @param sessionID
    * @constructor
    */
-  function NotificationCenter(baseURL) {
+  function NotificationCenter(baseURL, sessionID) {
 
     if (DEBUG) { console.log('new NotificationCenter', baseURL); }
 
     this.baseURL = baseURL || '/';
+    this.sessionID = sessionID;
 
     this._channelDeferred = null;
     this.subscribersByTopic = {};
@@ -115,7 +115,7 @@
         var onSuccess = this._createChannelDone.bind(this);
         var onError = this._createChannelFailed.bind(this);
 
-        this._channelDeferred = call('GET', this.baseURL + 'notification/v1/createChannel')
+        this._channelDeferred = call('GET', this.baseURL + 'notification/v1/createChannel', this.sessionID)
             .then(onSuccess, onError);
 
       }
@@ -388,7 +388,7 @@
         this._ongoingPingCall = createDeferred();
 
         this.notificationCenter.getOrCreateChannel()
-          .then(this._makePingCall);
+            .then(this._makePingCall);
       }
 
       return this._ongoingPingCall;
