@@ -231,7 +231,7 @@
     this.fallbackTransport = 'long-polling';
     this.enableXDR = true;
     this.logLevel = DEBUG ? 'debug' : 'info';
-    this.maxRequest = Math.pow(2, 53);
+    this.maxReconnectOnClose = Math.pow(2, 53);
 //    this.suspend = false;
 //    this.timeout = 1000 * 60 * 60; // 1 hour, server timeout must be lower
 //    this.timeout = 1000 * 1; // stress test: 1sec
