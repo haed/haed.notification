@@ -130,11 +130,11 @@ public class NotificationMgrImpl implements NotificationMgr {
 	public void subscribe(final String channelID, final String topic)
 			throws Exception {
 		
-//		final Broadcaster broadcaster = getBroadcaster(channelID, false);
-//		if (broadcaster == null)
-//			throw new Exception("no broadcaster found, channelID: " + channelID);
+	  final Set<String> set = this.topicsByChannel.get(channelID);
+	  if (set == null)
+	    throw new Exception("no broadcaster found for channelID '" + channelID +  "'");
 		
-		if (this.topicsByChannel.get(channelID).add(topic)) {
+		if (set.add(topic)) {
 			
 			if (logger.isDebugEnabled())
 				logger.debug("channel '" + channelID + "' subscribes to topic '" + topic + "'");
