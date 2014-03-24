@@ -298,11 +298,6 @@
       }
       
       if (notification) {
-
-//        if (notification.type.indexOf('ping') !== -1) {
-//          notification.type = 'ping';
-//        }
-
         this.notificationCenter.notify(notification.message, notification.type, notification.id);
       }
       
@@ -365,7 +360,8 @@
     this._onPingNotification = this._onPingNotification.bind(this);
     this._run = this._run.bind(this);
 
-    this.notificationCenter.onMessage(this._onPingNotification, 'ping');
+    this._subscribedChannels = [];
+
   }
 
   PingHandler.prototype = {
@@ -409,6 +405,11 @@
     },
 
     _makePingCall: function(channel) {
+
+      if (this._subscribedChannels.indexOf(channel.channelID) === -1) {
+        this._subscribedChannels.push(channel.channelID);
+        this.notificationCenter.onMessage(this._onPingNotification, 'haed.notification.ping.' + channel.channelID);
+      }
 
       this.tsCallStarted = Date.now();
       this.tsCallDone = -1;
