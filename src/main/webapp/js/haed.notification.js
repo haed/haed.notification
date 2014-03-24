@@ -374,7 +374,7 @@
 
       if (DEBUG) { console.log('PingHandler.start', this.notificationCenter.baseURL); }
       this.running = true;
-      this._timerID = setInterval(this._run, 10000);
+      this._timerID = setInterval(this._run, 30000);
 
     },
 
