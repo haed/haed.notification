@@ -6,7 +6,6 @@
                       http://java.sun.com/xml/ns/javaee/web-app_3_1.xsd" 
   version="3.1">
     
-    
     <!-- servlets -->
     
     <servlet>
@@ -22,6 +21,11 @@
       <init-param>
         <param-name>org.atmosphere.cpr.broadcasterCacheClass</param-name>
         <param-value>org.atmosphere.cache.UUIDBroadcasterCache</param-value>
+      </init-param>
+      
+      <init-param>
+        <param-name>org.atmosphere.cpr.broadcastFilterClasses</param-name>
+        <param-value>org.atmosphere.client.TrackMessageSizeFilter</param-value>
       </init-param>
       
       <init-param>

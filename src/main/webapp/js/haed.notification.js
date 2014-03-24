@@ -208,9 +208,7 @@
       for (var i=0; i<this._errorListeners.length; i++) {
         this._errorListeners[i](error);
       }
-
     }
-
   };
 
   /**
@@ -237,14 +235,15 @@
 //    this.timeout = 1000 * 1; // stress test: 1sec
     this.transport = 'websocket';
 //    this.transport = 'long-polling';
+    
+    this.trackMessageLength=true;
 
     this._initDeferred = null;
 
     this.onOpen = this.onOpen.bind(this);
     this.onError = this.onError.bind(this);
 
-    this._stream = '';
-
+//    this._stream = '';
   }
 
   Channel.prototype = {
@@ -289,43 +288,58 @@
       }
 
       if (DEBUG) { console.log('Channel.onMessage', response); }
-
-      this._stream += response.responseBody;
-
-      var idx = this._stream.indexOf(':');
-      while (idx > -1) {
-        var l = parseInt(this._stream.substring(0, idx), 10);
-        if (this._stream.length > (l + idx)) {
-
-          // parse notification
-          var notification;
-          try {
-            notification = JSON.parse(this._stream.substring(idx + 1, idx + 1 + l));
-          } catch (error) {
-            console.error('Unable to parse message: ' + error);
-          }
-
-          // finally cut stream and get next index
-          this._stream = this._stream.substring(idx + 1 + l);
-          idx = this._stream.indexOf(':');
-
-          // notify listeners
-          if (notification) {
-
-            if (notification.type.indexOf('ping') !== -1) {
-              notification.type = 'ping';
-            }
-
-            this.notificationCenter.notify(notification.message, notification.type, notification.id);
-          }
-
-        } else {
-          idx = -1;
-        }
+      
+      
+      var notification;
+      try {
+        notification = JSON.parse(response.responseBody);
+      } catch (error) {
+        console.error('Unable to parse message: ' + error);
       }
+      
+      if (notification) {
 
+//        if (notification.type.indexOf('ping') !== -1) {
+//          notification.type = 'ping';
+//        }
+
+        this.notificationCenter.notify(notification.message, notification.type, notification.id);
+      }
+      
+//      this._stream += response.responseBody;
+//
+//      var idx = this._stream.indexOf(':');
+//      while (idx > -1) {
+//        var l = parseInt(this._stream.substring(0, idx), 10);
+//        if (this._stream.length > (l + idx)) {
+//
+//          // parse notification
+//          var notification;
+//          try {
+//            notification = JSON.parse(this._stream.substring(idx + 1, idx + 1 + l));
+//          } catch (error) {
+//            console.error('Unable to parse message: ' + error);
+//          }
+//
+//          // finally cut stream and get next index
+//          this._stream = this._stream.substring(idx + 1 + l);
+//          idx = this._stream.indexOf(':');
+//
+//          // notify listeners
+//          if (notification) {
+//
+//            if (notification.type.indexOf('ping') !== -1) {
+//              notification.type = 'ping';
+//            }
+//
+//            this.notificationCenter.notify(notification.message, notification.type, notification.id);
+//          }
+//
+//        } else {
+//          idx = -1;
+//        }
+//      }
     }
-
   };
 
   /**
@@ -466,7 +480,6 @@
 
       // next round
       this.sendPing();
-
     }
   };
 
@@ -498,5 +511,4 @@
     _call: call
 
   };
-
 }());

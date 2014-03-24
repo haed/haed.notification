@@ -2,12 +2,12 @@ package haed.notification;
 
 import java.util.UUID;
 
-import com.sun.jersey.api.core.HttpContext;
+import javax.servlet.http.HttpServletRequest;
 
 public class UUIDChannelAdapter implements ChannelAdapter {
   
   @Override
-  public String getChannelID(final HttpContext httpContext) {
+  public String getChannelID(final HttpServletRequest httpServletRequest) {
     return UUID.randomUUID().toString();
   }
 }

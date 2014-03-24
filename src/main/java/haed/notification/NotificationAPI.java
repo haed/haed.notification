@@ -1,13 +1,11 @@
 package haed.notification;
 
-import java.net.URI;
 import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
-import javax.ws.rs.OPTIONS;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
@@ -23,8 +21,6 @@ import org.atmosphere.cpr.Broadcaster;
 import org.atmosphere.jersey.SuspendResponse;
 import org.atmosphere.jersey.SuspendResponse.SuspendResponseBuilder;
 
-import com.sun.jersey.api.core.HttpContext;
-
 @Path("/")
 public class NotificationAPI {
 	
@@ -39,83 +35,76 @@ public class NotificationAPI {
 	}
 	
 	
-	public static URI parseURI(String uri) {
-    
-    if (uri == null)
-      return null;
-    
-    uri = uri.trim();
-    if (uri.startsWith("http") == false) // only parse uris with a 'http(s)' scheme
-      return null;
-    
-    // cut hash
-    final int idx = uri.indexOf("#");
-    if (idx > -1)
-      uri = uri.substring(0, idx);
-    
-    try {
-      return new URI(uri);
-    } catch (final Throwable t) {
-      logger.fatal("error on checking referrer", t);
-      return null;
-    }
-  }
-	
-	
-	private static final String headers = 
-	  "X-Atmosphere-Framework, X-Atmosphere-tracking-id, X-Atmosphere-Transport, X-Cache-Date";
-//	  "X-Atmosphere-Framework, X-Atmosphere-tracking-id, X-Atmosphere-Transport, X-Cache-Date, " + SerialBroadcasterCache.HEADER;
-	
-	
-	static void enableCORS(final HttpServletRequest request, final HttpServletResponse response)
-	    throws Exception {
-    
-    String allowOrigin = "*";
-    try {
-      final String referrerHeader = request.getHeader("referer");
-      if (referrerHeader != null && referrerHeader.trim().isEmpty() == false) {
-        final URI referrerURI = parseURI(referrerHeader);
-        allowOrigin = referrerURI.getScheme() + "://" + referrerURI.getAuthority();
-      }
-    } catch (final Throwable t) {
-      logger.fatal("error on checking referrer", t);
-    }
-    
-    response.setHeader("Access-Control-Allow-Credentials", "true");
-    response.setHeader("Access-Control-Allow-Headers", headers);
-    response.setHeader("Access-Control-Allow-Origin", allowOrigin);
-    response.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-    response.setHeader("Access-Control-Expose-Headers", headers);
-	}
+//	public static URI parseURI(String uri) {
+//    
+//    if (uri == null)
+//      return null;
+//    
+//    uri = uri.trim();
+//    if (uri.startsWith("http") == false) // only parse uris with a 'http(s)' scheme
+//      return null;
+//    
+//    // cut hash
+//    final int idx = uri.indexOf("#");
+//    if (idx > -1)
+//      uri = uri.substring(0, idx);
+//    
+//    try {
+//      return new URI(uri);
+//    } catch (final Throwable t) {
+//      logger.fatal("error on checking referrer", t);
+//      return null;
+//    }
+//  }
+//	
+//	static void enableCORS(final HttpServletRequest request, final HttpServletResponse response)
+//	    throws Exception {
+//    
+//    String allowOrigin = "*";
+//    try {
+//      final String referrerHeader = request.getHeader("referer");
+//      if (referrerHeader != null && referrerHeader.trim().isEmpty() == false) {
+//        final URI referrerURI = parseURI(referrerHeader);
+//        allowOrigin = referrerURI.getScheme() + "://" + referrerURI.getAuthority();
+//      }
+//    } catch (final Throwable t) {
+//      logger.fatal("error on checking referrer", t);
+//    }
+//    
+//    response.setHeader("Access-Control-Allow-Credentials", "true");
+//    response.setHeader("Access-Control-Allow-Headers", headers);
+//    response.setHeader("Access-Control-Allow-Origin", allowOrigin);
+//    response.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+//    response.setHeader("Access-Control-Expose-Headers", headers);
+//	}
 	
 	public static String createPingNotificationType(final String channelID) {
     return "haed.notification.ping." + channelID;
   }
 	
 	
-	@OPTIONS
-  @Path("/createChannel")
-  public void createChannel_OPTIONS(
-        final @Context HttpServletRequest request, 
-        final @Context HttpServletResponse response)
-      throws Exception {
-    enableCORS(request, response);
-  }
+//	@OPTIONS
+//  @Path("/createChannel")
+//  public void createChannel_OPTIONS(
+//        final @Context HttpServletRequest request, 
+//        final @Context HttpServletResponse response)
+//      throws Exception {
+//    enableCORS(request, response);
+//  }
 	
 	@GET
 	@Path("/createChannel")
 	@Produces(MediaType.TEXT_PLAIN + ";charset=utf-8")
 	public Response createChannel_GET(
-	      final @Context HttpContext httpContext,
 	      final @Context HttpServletRequest request,
 	      final @Context HttpServletResponse response)
 			throws Exception {
 	  
-	  enableCORS(request, response);
+//	  enableCORS(request, response);
 	  
 	  final NotificationMgrImpl notificationMgr = NotificationMgrImpl.getInstance();
 		
-		final String channelID = notificationMgr.getChannelAdapter().getChannelID(httpContext);
+		final String channelID = notificationMgr.getChannelAdapter().getChannelID(request);
 		notificationMgr.getBroadcaster(channelID, true);
 		
 		// also register for ping and ping initial
@@ -126,14 +115,14 @@ public class NotificationAPI {
 		return Response.ok(channelID).cacheControl(cacheControl_cacheNever).build();
 	}
 	
-	@OPTIONS
-  @Path("/openChannel")
-  public void openChannel_OPTIONS(
-        final @Context HttpServletRequest request, 
-        final @Context HttpServletResponse response)
-      throws Exception {
-    enableCORS(request, response);
-  }
+//	@OPTIONS
+//  @Path("/openChannel")
+//  public void openChannel_OPTIONS(
+//        final @Context HttpServletRequest request, 
+//        final @Context HttpServletResponse response)
+//      throws Exception {
+//    enableCORS(request, response);
+//  }
 	
 	@GET
 	@Path("/openChannel")
@@ -145,7 +134,7 @@ public class NotificationAPI {
       throws Exception {
 	  
 	  
-	  enableCORS(request, response);
+//	  enableCORS(request, response);
     
     
     // HOTFIX: to prevent long-polling calls to be pipe-lined
@@ -187,14 +176,14 @@ public class NotificationAPI {
 	}
 	
 	
-	@OPTIONS
-  @Path("/ping")
-  public void ping_OPTIONS(
-        final @Context HttpServletRequest request, 
-        final @Context HttpServletResponse response)
-      throws Exception {
-    enableCORS(request, response);
-  }
+//	@OPTIONS
+//  @Path("/ping")
+//  public void ping_OPTIONS(
+//        final @Context HttpServletRequest request, 
+//        final @Context HttpServletResponse response)
+//      throws Exception {
+//    enableCORS(request, response);
+//  }
 	
 	@GET
 	@Path("/ping")
@@ -204,7 +193,7 @@ public class NotificationAPI {
 				final @QueryParam("channelID") String channelID)
 			throws Exception {
 	  
-	  enableCORS(request, response);
+//	  enableCORS(request, response);
 		
 		// check if channel exists
 	  final NotificationMgrImpl notificationMgr = NotificationMgrImpl.getInstance();
@@ -225,7 +214,7 @@ public class NotificationAPI {
 	}
 	
 	
-	static String debug(final HttpServletRequest httpServletRequest) {
+	public static String debug(final HttpServletRequest httpServletRequest) {
     
     final StringBuilder debug = new StringBuilder();
     

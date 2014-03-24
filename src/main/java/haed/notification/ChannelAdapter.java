@@ -1,9 +1,9 @@
 package haed.notification;
 
-import com.sun.jersey.api.core.HttpContext;
+import javax.servlet.http.HttpServletRequest;
 
 public interface ChannelAdapter {
   
-  String getChannelID(final HttpContext httpContext)
+  String getChannelID(final HttpServletRequest httpServletRequest)
       throws Exception;
 }

@@ -235,8 +235,8 @@ public class NotificationMgrImpl implements NotificationMgr {
 				final long id = incrementAndGetNotificationID(channelID);
 				final NotificationCtnr notificationCtnr = new NotificationCtnr(id, topic, payload);
 		    
-		    String message = gson.toJson(notificationCtnr);
-		    message = message.length() + ":" + message;
+		    final String message = gson.toJson(notificationCtnr);
+//		    message = message.length() + ":" + message;
 			  
 				if (logger.isDebugEnabled())
 					logger.debug("send notification, channelID: " + channelID + ", id: " + id + ", ctnr: " + notificationCtnr);
