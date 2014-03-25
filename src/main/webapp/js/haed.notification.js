@@ -235,7 +235,7 @@
 //    this.timeout = 1000 * 1; // stress test: 1sec
     this.transport = 'websocket';
 //    this.transport = 'long-polling';
-    
+
     this.trackMessageLength=true;
 
     this._initDeferred = null;
@@ -288,19 +288,19 @@
       }
 
       if (DEBUG) { console.log('Channel.onMessage', response); }
-      
-      
+
+
       var notification;
       try {
         notification = JSON.parse(response.responseBody);
       } catch (error) {
         console.error('Unable to parse message: ' + error);
       }
-      
+
       if (notification) {
         this.notificationCenter.notify(notification.message, notification.type, notification.id);
       }
-      
+
 //      this._stream += response.responseBody;
 //
 //      var idx = this._stream.indexOf(':');
@@ -384,6 +384,7 @@
         return;
       }
 
+      this._ongoingPingCall = null;
       this.running = false;
       clearInterval(this._timerID);
 
@@ -431,6 +432,7 @@
 
     _pingCallFailed: function(xhr) {
 
+      this._ongoingPingCall = null;
       var msg = 'Unable to send ping to server: ' + xhr.responseText;
       if (DEBUG) { console.error(msg); }
       var error = new NotificationError('ping_call_failed', msg, xhr);
@@ -478,6 +480,9 @@
         var error = new NotificationError(errorID, msg);
         this.notificationCenter._informErrorListeners(error);
       }
+
+      // reset old ongoing call
+      this._ongoingPingCall = null;
 
       // next round
       this.sendPing();
