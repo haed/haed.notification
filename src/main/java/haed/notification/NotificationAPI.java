@@ -74,11 +74,23 @@ public class NotificationAPI {
 	  return openChannel_GET(request, response, channelID, outputComments);
 	}
 	
+	@Deprecated
+	@GET
+	@Path("/openChannel")
+	public SuspendResponse<String> openChannel_GET_deprecated(
+  	    final @Context HttpServletRequest request,
+  	    final @Context HttpServletResponse response,
+  	    final @QueryParam("channelID") String channelID,
+  	    final @QueryParam("outputComments") @DefaultValue("false") Boolean outputComments)
+	    throws Exception {
+	  return openChannel_GET(request, response, channelID, outputComments);
+	}
+	
 	@GET
 	@Path("/channels/{channelID}/open")
 	public SuspendResponse<String> openChannel_GET(
-        final @Context HttpServletRequest request, 
-        final @Context HttpServletResponse response, 
+        final @Context HttpServletRequest request,
+        final @Context HttpServletResponse response,
         final @PathParam("channelID") String channelID,
         final @QueryParam("outputComments") @DefaultValue("false") Boolean outputComments)
       throws Exception {
