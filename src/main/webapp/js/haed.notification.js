@@ -223,8 +223,10 @@
     this.channelID = channelID;
     this.notificationCenter = notificationCenter;
 
-    // config for atmosphere plugin
-    this.url = notificationCenter.baseURL + 'notification/v1/openChannel?channelID=' + window.encodeURIComponent(channelID);
+    // configure atmosphere
+    this.url = notificationCenter.baseURL + "notification/v1/channels/" + window.encodeURIComponent(channelID) + "/open";
+    this.webSocketUrl = this.url + ".ws"; // used to mark ws connections (needed for some proxies)
+    
     this.contentType = 'application/json';
     this.fallbackTransport = 'long-polling';
     this.enableXDR = true;
@@ -235,7 +237,7 @@
 //    this.timeout = 1000 * 1; // stress test: 1sec
     this.transport = 'websocket';
 //    this.transport = 'long-polling';
-
+    
     this.trackMessageLength=true;
 
     this._initDeferred = null;

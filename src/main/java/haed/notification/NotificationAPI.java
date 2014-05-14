@@ -7,6 +7,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
@@ -34,63 +35,9 @@ public class NotificationAPI {
 		cacheControl_cacheNever.setNoCache(true);
 	}
 	
-	
-//	public static URI parseURI(String uri) {
-//    
-//    if (uri == null)
-//      return null;
-//    
-//    uri = uri.trim();
-//    if (uri.startsWith("http") == false) // only parse uris with a 'http(s)' scheme
-//      return null;
-//    
-//    // cut hash
-//    final int idx = uri.indexOf("#");
-//    if (idx > -1)
-//      uri = uri.substring(0, idx);
-//    
-//    try {
-//      return new URI(uri);
-//    } catch (final Throwable t) {
-//      logger.fatal("error on checking referrer", t);
-//      return null;
-//    }
-//  }
-//	
-//	static void enableCORS(final HttpServletRequest request, final HttpServletResponse response)
-//	    throws Exception {
-//    
-//    String allowOrigin = "*";
-//    try {
-//      final String referrerHeader = request.getHeader("referer");
-//      if (referrerHeader != null && referrerHeader.trim().isEmpty() == false) {
-//        final URI referrerURI = parseURI(referrerHeader);
-//        allowOrigin = referrerURI.getScheme() + "://" + referrerURI.getAuthority();
-//      }
-//    } catch (final Throwable t) {
-//      logger.fatal("error on checking referrer", t);
-//    }
-//    
-//    response.setHeader("Access-Control-Allow-Credentials", "true");
-//    response.setHeader("Access-Control-Allow-Headers", headers);
-//    response.setHeader("Access-Control-Allow-Origin", allowOrigin);
-//    response.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-//    response.setHeader("Access-Control-Expose-Headers", headers);
-//	}
-	
 	public static String createPingNotificationType(final String channelID) {
     return "haed.notification.ping." + channelID;
   }
-	
-	
-//	@OPTIONS
-//  @Path("/createChannel")
-//  public void createChannel_OPTIONS(
-//        final @Context HttpServletRequest request, 
-//        final @Context HttpServletResponse response)
-//      throws Exception {
-//    enableCORS(request, response);
-//  }
 	
 	@GET
 	@Path("/createChannel")
@@ -99,8 +46,6 @@ public class NotificationAPI {
 	      final @Context HttpServletRequest request,
 	      final @Context HttpServletResponse response)
 			throws Exception {
-	  
-//	  enableCORS(request, response);
 	  
 	  final NotificationMgrImpl notificationMgr = NotificationMgrImpl.getInstance();
 		
@@ -115,28 +60,29 @@ public class NotificationAPI {
 		return Response.ok(channelID).cacheControl(cacheControl_cacheNever).build();
 	}
 	
-//	@OPTIONS
-//  @Path("/openChannel")
-//  public void openChannel_OPTIONS(
-//        final @Context HttpServletRequest request, 
-//        final @Context HttpServletResponse response)
-//      throws Exception {
-//    enableCORS(request, response);
-//  }
+	/**
+	 * A special fake endpoint for a different ws-url (for proxies).
+	 */
+	@GET
+	@Path("/channels/{channelID}/open.ws")
+  public SuspendResponse<String> openWebSocketChannel_GET(
+        final @Context HttpServletRequest request, 
+        final @Context HttpServletResponse response, 
+        final @PathParam("channelID") String channelID, 
+        final @QueryParam("outputComments") @DefaultValue("false") Boolean outputComments)
+      throws Exception {
+	  return openChannel_GET(request, response, channelID, outputComments);
+	}
 	
 	@GET
-	@Path("/openChannel")
+	@Path("/channels/{channelID}/open")
 	public SuspendResponse<String> openChannel_GET(
         final @Context HttpServletRequest request, 
         final @Context HttpServletResponse response, 
-        final @QueryParam("channelID") String channelID, 
+        final @PathParam("channelID") String channelID,
         final @QueryParam("outputComments") @DefaultValue("false") Boolean outputComments)
       throws Exception {
 	  
-	  
-//	  enableCORS(request, response);
-    
-    
     // HOTFIX: to prevent long-polling calls to be pipe-lined
     // (HTTP Pipelining is used be all mobile browser and can also be activated in desktop browsers)
     response.setHeader("Connection", "close");
@@ -175,16 +121,6 @@ public class NotificationAPI {
     return suspendResponseBuilder.build();
 	}
 	
-	
-//	@OPTIONS
-//  @Path("/ping")
-//  public void ping_OPTIONS(
-//        final @Context HttpServletRequest request, 
-//        final @Context HttpServletResponse response)
-//      throws Exception {
-//    enableCORS(request, response);
-//  }
-	
 	@GET
 	@Path("/ping")
 	public Response ping_GET(
@@ -192,8 +128,6 @@ public class NotificationAPI {
         final @Context HttpServletResponse response, 
 				final @QueryParam("channelID") String channelID)
 			throws Exception {
-	  
-//	  enableCORS(request, response);
 		
 		// check if channel exists
 	  final NotificationMgrImpl notificationMgr = NotificationMgrImpl.getInstance();
